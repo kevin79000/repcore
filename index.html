@@ -315,37 +315,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       <p style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:12px">Génère un lien d'invitation à envoyer par WhatsApp ou SMS. L'athlète le colle dans le champ code.</p>
       <button class="btn btn-outline" style="font-size:11px;letter-spacing:1px" onclick="copyCoachInviteLink()">📋 Copier le lien d'invitation</button>
     </div>
-    <button class="btn btn-red" style="margin-top:20px" onclick="go('s-coach-home');loadCoachHome()">Accéder à mon dashboard →</button>
-  </div>
-</div>
-
-<!-- CLIENT CODE INPUT -->
-<div id="s-client-code" class="screen" style="justify-content:center;padding:32px 24px">
-  <div class="anim-in">
-    <div style="text-align:center;margin-bottom:24px">
-      <div style="font-size:52px;margin-bottom:16px">🔗</div>
-      <h1 style="margin-bottom:8px">Code coach</h1>
-      <p class="sub" style="line-height:1.6">Entre le code ou le lien d'invitation envoyé par ton coach.</p>
-    </div>
-    <div><label>Code ou lien d'invitation</label><input id="cc-code" placeholder="GCP-XXXXXX ou lien coach..." style="text-align:center;font-size:15px;font-weight:700;letter-spacing:2px" oninput="this.value=this.value.trim()"></div>
-    <div id="cc-err" style="color:#f87171;font-size:13px;margin-top:8px;display:none;line-height:1.5"></div>
-    <button class="btn btn-red" style="margin-top:16px" onclick="doLinkCoach()">Lier mon coach ✓</button>
-    <button class="btn btn-outline" style="margin-top:10px" onclick="openBilan('depart')">Continuer sans coach</button>
-  </div>
-</div>
-
-<!-- QUESTIONNAIRE -->
-<div id="s-questionnaire" class="screen">
-  <div class="topbar"><button class="back-btn" onclick="go('s-client-code')">←</button><span class="topbar-title">Mon profil</span><span id="q-step-label" class="sub">1/4</span></div>
-  <div class="pad scroll-area" style="flex:1" id="q-content"></div>
-  <div style="padding:16px 20px;display:flex;gap:10px;flex-shrink:0">
-    <button class="btn btn-outline" id="q-prev" onclick="qPrev()" style="display:none;flex:none;width:80px">← Retour</button>
-    <button class="btn btn-red" id="q-next" onclick="qNext()">Suivant →</button>
-  </div>
-</div>
-
-<!-- COACH HOME -->
-<div id="s-coach-home" class="screen">
+    <button class="btn btn-red" style="margin-top:20px" onclick="go('<div id="s-coach-home" class="screen">
   <!-- Brand header -->
   <div style="background:linear-gradient(135deg,#0f0000,#160000);border-bottom:1px solid #2a0000;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;overflow:hidden">
     <div style="position:absolute;right:0;top:0;width:80px;height:100%;background:linear-gradient(135deg,transparent 40%,#C60F0810 40%,#C60F0818 60%,transparent 61%);pointer-events:none"></div>
@@ -358,30 +328,82 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     </div>
     <div style="display:flex;gap:6px;align-items:center">
       <button onclick="showCoachCode()" style="background:var(--card2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px">CODE</button>
-      <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 10px;font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer">✕</button>
+      <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 10px;font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer">X</button>
     </div>
   </div>
-  
-  <div class="scroll-area" style="flex:1">
+  <!-- Tabs -->
+  <div style="display:flex;border-bottom:1px solid #1a0000;flex-shrink:0;background:#080808">
+    <button id="ct-tab-dashboard" onclick="coachTab('dashboard')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid var(--red);color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">ATHLETES</button>
+    <button id="ct-tab-codes" onclick="coachTab('codes')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">CODES</button>
+    <button id="ct-tab-monetisation" onclick="coachTab('monetisation')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">PAIEMENTS</button>
+  </div>
+  <!-- Tab: Athletes -->
+  <div id="ct-dashboard" class="scroll-area" style="flex:1">
     <div class="pad">
       <div style="display:flex;gap:10px;margin-bottom:20px">
-        <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athlètes</div></div>
+        <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athletes</div></div>
         <div class="metric-box"><div class="metric-val" id="ch-active" style="color:var(--green)">0</div><div class="metric-label">Actifs</div></div>
         <div class="metric-box"><div class="metric-val" id="ch-alerts" style="color:var(--red)">0</div><div class="metric-label">Alertes</div></div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div>
-          <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div>
-          <h2>Mes athlètes</h2>
-        </div>
+        <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h2>Mes athletes</h2></div>
         <button class="btn btn-red btn-sm" onclick="openAddAthlete()" style="letter-spacing:1px">+ Ajouter</button>
       </div>
       <div class="sub" style="font-size:11px;margin-bottom:14px;font-family:monospace;letter-spacing:2px" id="ch-code-small"></div>
       <div id="ch-clients-list"></div>
     </div>
   </div>
+  <!-- Tab: Codes -->
+  <div id="ct-codes" class="scroll-area" style="flex:1;display:none">
+    <div class="pad">
+      <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div>
+      <h2 style="margin-bottom:4px">Codes acces eleves</h2>
+      <p class="sub" style="font-size:12px;margin-bottom:20px">Genere un code avec une duree d'acces pour chaque eleve.</p>
+      <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
+        <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:14px">NOUVEAU CODE</div>
+        <div style="margin-bottom:12px"><label>Nom de l'eleve</label><input id="sc-name" placeholder="Prenom Nom"></div>
+        <div style="margin-bottom:14px">
+          <label>Duree d'acces</label>
+          <select id="sc-duration" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:#fff;padding:12px 14px;border-radius:10px;font-family:Montserrat,sans-serif;font-size:13px">
+            <option value="1">1 mois</option><option value="3" selected>3 mois</option><option value="6">6 mois</option><option value="12">12 mois</option>
+          </select>
+        </div>
+        <button class="btn btn-red" onclick="generateStudentCode()" style="letter-spacing:1px">Generer le code</button>
+        <div id="sc-result" style="display:none;margin-top:16px">
+          <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:10px;padding:14px">
+            <div style="font-size:10px;color:var(--sub);letter-spacing:2px;margin-bottom:6px">CODE GENERE</div>
+            <div id="sc-code-val" style="font-family:monospace;font-size:12px;color:var(--green);word-break:break-all;margin-bottom:10px"></div>
+            <div style="font-size:11px;color:#aaa;margin-bottom:12px" id="sc-expiry-info"></div>
+            <button class="btn btn-outline" onclick="copyStudentCode()" style="font-size:11px">Copier et envoyer</button>
+          </div>
+        </div>
+      </div>
+      <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h3 style="margin-bottom:14px">Codes generes</h3><div id="sc-list"></div></div>
+    </div>
+  </div>
+  <!-- Tab: Paiements -->
+  <div id="ct-monetisation" class="scroll-area" style="flex:1;display:none">
+    <div class="pad">
+      <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div>
+      <h2 style="margin-bottom:4px">Monetisation</h2>
+      <p class="sub" style="font-size:12px;margin-bottom:20px">Connecte ton PayPal pour recevoir les abonnements autonomie de tes eleves.</p>
+      <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
+        <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:16px">CONFIGURATION PAYPAL LIVE</div>
+        <div style="margin-bottom:12px"><label>Client ID PayPal (developer.paypal.com)</label><input id="pp-client-id" placeholder="AY..." style="font-size:11px;font-family:monospace"></div>
+        <div style="margin-bottom:14px"><label>Plan ID abonnement 9,99EUR/mois</label><input id="pp-plan-id" placeholder="P-..." style="font-size:11px;font-family:monospace"></div>
+        <button class="btn btn-red" onclick="savePaypalSettings()" style="letter-spacing:1px">Sauvegarder</button>
+        <div id="pp-status" style="margin-top:10px;font-size:12px;color:var(--green);display:none">Configuration sauvegardee</div>
+        <div style="margin-top:14px;background:#080808;border-radius:8px;padding:12px;font-size:11px;color:#555;line-height:1.7"><strong style="color:#888">Comment :</strong><br>1. developer.paypal.com - My Apps - Creer app - copier Client ID<br>2. PayPal - Products and Plans - creer plan 9,99EUR/mois - copier Plan ID</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <div class="metric-box"><div class="metric-val" id="pp-total-subs" style="color:var(--green)">0</div><div class="metric-label">Abonnes</div></div>
+        <div class="metric-box"><div class="metric-val" id="pp-mrr" style="color:var(--green)">0EUR</div><div class="metric-label">MRR</div></div>
+        <div class="metric-box"><div class="metric-val" id="pp-cancelled">0</div><div class="metric-label">Annules</div></div>
+      </div>
+      <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h3 style="margin-bottom:14px">Abonnes autonomie</h3><div id="pp-subs-list"></div></div>
+    </div>
+  </div>
 </div>
-
 <!-- COACH CLIENT DETAIL -->
 <div id="s-coach-client" class="screen">
   <div class="topbar"><button class="back-btn" onclick="go('s-coach-home');loadCoachHome()">←</button><span class="topbar-title" id="ccd-title">Athlète</span><span></span></div>
@@ -988,8 +1010,42 @@ window.onload=()=>{
 };
 function routeUser(){
   if(!currentUser) return go('s-welcome');
-  if(currentUser.role==='coach'){loadCoachHome();}
-  else{loadClientHome();}
+  if(currentUser.role==='coach'){loadCoachHome();return;}
+  // Check athlete access
+  if(!checkAccess(currentUser)){go('s-access-gate');loadAccessGate();return;}
+  loadClientHome();
+}
+function checkAccess(u){
+  if(!u||u.role==='coach') return true;
+  const s=u.status||'FREE';
+  if(s==='FREE') return false;
+  if(s==='COACHING_SUIVI'){
+    if(!u.accessExpiry) return true;
+    return Date.now()<u.accessExpiry;
+  }
+  if(s==='AUTONOMIE_PREMIUM') return u.paymentStatus==='active';
+  return false;
+}
+function loadAccessGate(){
+  const u=currentUser;
+  const title=document.getElementById('ag-title');
+  const sub=document.getElementById('ag-sub');
+  const block=document.getElementById('ag-status-block');
+  if(!u){return;}
+  if(u.status==='COACHING_SUIVI'&&u.accessExpiry&&Date.now()>=u.accessExpiry){
+    title.textContent='Acces expire';
+    sub.textContent='Ton acces coaching avec suivi a expire.';
+    const d=new Date(u.accessExpiry);
+    block.innerHTML='<div style="font-size:12px;color:#888;line-height:1.8">Statut: <span style="color:#f87171">EXPIRE</span><br>Expire le: <strong>'+d.toLocaleDateString('fr-FR')+'</strong><br>Coach: <strong>'+(u.coachName||'?')+'</strong><br><br>Contacte ton coach pour prolonger ton acces.</div>';
+  } else if(u.status==='AUTONOMIE_PREMIUM'&&u.paymentStatus!=='active'){
+    title.textContent='Abonnement inactif';
+    sub.textContent='Ton abonnement mensuel n'est plus actif.';
+    block.innerHTML='<div style="font-size:12px;color:#888;line-height:1.8">Statut: <span style="color:#f87171">'+( u.paymentStatus||'INACTIF')+'</span><br>Abonnement ID: <span style="font-family:monospace;font-size:11px">'+(u.paypalSubscriptionId||'N/A')+'</span><br><br>Renouvelle ton abonnement pour retrouver l'acces.</div>';
+  } else {
+    title.textContent='Acces requis';
+    sub.textContent='Tu dois activer un acces pour utiliser RepCore.';
+    block.innerHTML='<div style="font-size:12px;color:#888;line-height:1.8">Tu n'as pas encore d'acces actif.<br>Entre un code fourni par ton coach, ou souscris a l'abonnement autonomie a 9,99EUR/mois.</div>';
+  }
 }
 
 // ======= NAV =======
@@ -1023,7 +1079,8 @@ function doRegister(){
   if(users[em]) return showErr('r-err','Email déjà utilisé.');
   const uid='u_'+Date.now();
   const user={id:uid,fname:fn,lname:ln,email:em,pwd:pw,role:selRole,gender:gn,
-    createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],coachId:null,coachName:null};
+    createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],coachId:null,coachName:null,
+    status:'FREE',accessExpiry:null,paymentStatus:null,paypalSubscriptionId:null};
   if(selRole==='coach'){user.code=genCode();user.clients=[];}
   users[em]=user;DB.set('users',users);
   currentUser=user;DB.set('session',user);
@@ -1059,7 +1116,34 @@ function doLinkCoach(){
   const raw=document.getElementById('cc-code').value.trim();
   if(!raw){return showErr('cc-err','Entre un code ou lien coach.');}
 
-  // ── Cas 1 : RCLINK token (cross-device invite)
+  // Case 1: RCACCESS token (coaching access with expiry)
+  if(raw.startsWith('RCACCESS:')){
+    try{
+      const payload=JSON.parse(decodeURIComponent(escape(atob(raw.slice(9)))));
+      if(!payload.coachId||!payload.expiry) throw new Error('invalid');
+      if(Date.now()>payload.expiry){return showErr('cc-err','Ce code a expire. Demande un nouveau code a ton coach.');}
+      currentUser.coachId=payload.coachId;
+      currentUser.coachName=payload.coachName||'Coach';
+      currentUser.status='COACHING_SUIVI';
+      currentUser.accessExpiry=payload.expiry;
+      const users=DB.get('users')||{};
+      const coach=Object.values(users).find(u=>u.id===payload.coachId);
+      if(coach&&coach.studentCodes){
+        const sc=coach.studentCodes.find(cc=>cc.codeId===payload.codeId);
+        if(sc) sc.usedBy=currentUser.fname+' '+currentUser.lname;
+        if(!coach.clients) coach.clients=[];
+        if(!coach.clients.includes(currentUser.id)) coach.clients.push(currentUser.id);
+        users[coach.email]=coach;
+      }
+      users[currentUser.email]=currentUser;
+      DB.set('users',users);DB.set('session',currentUser);
+      const exp=new Date(payload.expiry).toLocaleDateString('fr-FR');
+      toast('Acces active jusqu'au '+exp);
+      openBilan('depart');return;
+    }catch(e){return showErr('cc-err','Code invalide ou corrompu. Contacte ton coach.');}
+  }
+
+  // Case 2: RCLINK token (legacy basic invite)
   if(raw.startsWith('RCLINK:')){
     try{
       const payload=JSON.parse(decodeURIComponent(escape(atob(raw.slice(7)))));
@@ -1067,30 +1151,32 @@ function doLinkCoach(){
       currentUser.coachId=payload.i;
       currentUser.coachName=payload.f+(payload.l?' '+payload.l:'');
       currentUser.coachCode=payload.c;
+      currentUser.status='COACHING_SUIVI';
       const users=DB.get('users')||{};
       users[currentUser.email]=currentUser;
       DB.set('users',users);DB.set('session',currentUser);
-      toast('✅ Lié à '+currentUser.coachName+' !');
+      toast('Lie a '+currentUser.coachName);
       openBilan('depart');return;
-    }catch(e){return showErr('cc-err','Lien d\'invitation invalide. Demande un nouveau lien à ton coach.');}
+    }catch(e){return showErr('cc-err','Lien invalide. Demande un nouveau lien a ton coach.');}
   }
 
-  // ── Cas 2 : code GCP-XXXXXX (même appareil)
+  // Case 3: GCP-XXXXXX code (same device)
   const code=raw.toUpperCase().replace(/\s/g,'');
   const users=DB.get('users')||{};
   const allUsers=Object.values(users);
   const coach=allUsers.find(u=>u.role==='coach'&&u.code&&u.code.toUpperCase()===code);
   if(!coach){
-    return showErr('cc-err','Code introuvable sur cet appareil.\n\n💡 Demande à ton coach d\'appuyer sur "Copier le lien d\'invitation" dans son profil et de te l\'envoyer par WhatsApp.');
+    return showErr('cc-err','Code introuvable. Ton coach doit te generer un code depuis son espace coach (onglet CODES).');
   }
   currentUser.coachId=coach.id;
   currentUser.coachName=coach.fname+' '+coach.lname;
+  currentUser.status='COACHING_SUIVI';
   if(!coach.clients) coach.clients=[];
   if(!coach.clients.includes(currentUser.id)) coach.clients.push(currentUser.id);
   users[currentUser.email]=currentUser;
   users[coach.email]=coach;
   DB.set('users',users);DB.set('session',currentUser);
-  toast('✅ Lié à '+coach.fname+' '+coach.lname+' !');
+  toast('Lie a '+coach.fname+' '+coach.lname);
   openBilan('depart');
 }
 function showCoachCode(){
@@ -1438,7 +1524,76 @@ function openHomePdf(){
   if(badge) badge.style.display='none';
   if(freshU.programPdf){
     const w=window.open();
-    if(w){w.document.write('<html><body style="margin:0;background:#000"><iframe src="'+freshU.programPdf+'" style="width:100%;height:100vh;border:none"></iframe></body></html>');w.document.close();}
+    if(w){w.document.write('<html><body style="margin:0;background:#000"><iframe src="'+freshU.programPdf+'" style="width:100%;height:100vh;border:none"></iframe>
+<!-- ══════ ACCESS GATE ══════ -->
+<div id="s-access-gate" class="screen" style="background:#060606;justify-content:center;padding:32px 24px;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(198,15,8,.025) 18px,rgba(198,15,8,.025) 19px);pointer-events:none"></div>
+  <div class="anim-in" style="text-align:center;z-index:1;width:100%">
+    <div style="font-size:56px;margin-bottom:16px">🔒</div>
+    <h1 style="margin-bottom:8px" id="ag-title">Accès expiré</h1>
+    <p class="sub" style="line-height:1.6;margin-bottom:32px" id="ag-sub">Ton accès à RepCore n'est plus actif.</p>
+    <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:24px;text-align:left">
+      <div id="ag-status-block"></div>
+    </div>
+    <div class="gap">
+      <button class="btn btn-red" onclick="go('s-subscribe');loadSubscribePage()">🔑 Renouveler mon accès</button>
+      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer un nouveau code</button>
+    </div>
+    <button onclick="logout()" style="margin-top:24px;background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;font-family:Montserrat,sans-serif">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- ══════ SUBSCRIBE ══════ -->
+<div id="s-subscribe" class="screen" style="background:#060606;overflow:hidden">
+  <div class="topbar" style="border-bottom:1px solid #1a0000">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <span class="topbar-title">Accès RepCore</span>
+    <span></span>
+  </div>
+  <div class="scroll-area pad">
+
+    <!-- Option 1: Code coach -->
+    <div style="border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">🎯</div>
+        <div>
+          <div style="font-weight:800;font-size:15px">Coaching avec suivi</div>
+          <div style="font-size:11px;color:var(--sub)">Code fourni par ton coach</div>
+        </div>
+      </div>
+      <p class="sub" style="font-size:12px;line-height:1.6;margin-bottom:14px">Tu as reçu un code d'accès de ton coach. Entre-le ici pour débloquer l'app avec ton suivi personnalisé.</p>
+      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer mon code coach</button>
+    </div>
+
+    <!-- Option 2: Autonomie -->
+    <div style="border:2px solid var(--red);border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000;position:relative;overflow:hidden">
+      <div style="position:absolute;top:12px;right:12px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:1px">POPULAIRE</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">💪</div>
+        <div>
+          <div style="font-weight:800;font-size:15px">Coaching en autonomie</div>
+          <div style="font-size:11px;color:var(--red);font-weight:700">9,99 € / mois</div>
+        </div>
+      </div>
+      <ul style="font-size:12px;color:#aaa;line-height:1.9;margin-bottom:16px;padding-left:0;list-style:none">
+        <li>✅ Accès complet à l'application</li>
+        <li>✅ Programmes d'entraînement</li>
+        <li>✅ Suivi nutrition & bilans</li>
+        <li>✅ Vidéos techniques</li>
+        <li>✅ Sans engagement — annulation facile</li>
+      </ul>
+      <div style="width:36px;height:2px;background:var(--red);margin-bottom:16px"></div>
+      <div id="paypal-btn-container" style="min-height:48px">
+        <button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99€/mois →</button>
+      </div>
+      <p style="font-size:10px;color:#555;margin-top:10px;text-align:center">Paiement sécurisé via PayPal · Sans engagement</p>
+    </div>
+
+    <p class="sub" style="font-size:11px;text-align:center;line-height:1.6">Tu as déjà acheté un programme ? Inscris-toi ici pour accéder à toutes les fonctionnalités de coaching en autonomie.</p>
+  </div>
+</div>
+
+</body></html>');w.document.close();}
   } else if(freshU.programPdfLink){
     window.open(freshU.programPdfLink,'_blank');
   }
@@ -3164,5 +3319,231 @@ function initLogos(){
   const ph=document.getElementById('welcome-photo');if(ph)ph.src=COACH_PHOTO;
 }
 document.addEventListener('DOMContentLoaded',initLogos);
+
+
+// ═══════════════════════════════════════════════════
+// MONETISATION — Coach tabs
+// ═══════════════════════════════════════════════════
+function coachTab(tab){
+  const tabs=['dashboard','codes','monetisation'];
+  tabs.forEach(t=>{
+    const panel=document.getElementById('ct-'+t);
+    const btn=document.getElementById('ct-tab-'+t);
+    if(panel) panel.style.display=t===tab?'':'none';
+    if(btn){
+      btn.style.borderBottom=t===tab?'2px solid var(--red)':'2px solid transparent';
+      btn.style.color=t===tab?'#fff':'var(--sub)';
+    }
+  });
+  if(tab==='codes') loadStudentCodes();
+  if(tab==='monetisation') loadMonetisationTab();
+}
+
+// ── Coach: load PayPal settings into inputs ──
+function loadMonetisationTab(){
+  const u=currentUser;
+  if(u.paypalClientId) document.getElementById('pp-client-id').value=u.paypalClientId;
+  if(u.paypalPlanId) document.getElementById('pp-plan-id').value=u.paypalPlanId;
+  // Calc stats from all users
+  const users=DB.get('users')||{};
+  const subs=Object.values(users).filter(x=>x.status==='AUTONOMIE_PREMIUM'&&x.coachId===u.id);
+  const active=subs.filter(x=>x.paymentStatus==='active');
+  const cancelled=subs.filter(x=>x.paymentStatus==='cancelled');
+  document.getElementById('pp-total-subs').textContent=active.length;
+  document.getElementById('pp-mrr').textContent=(active.length*9.99).toFixed(2)+'EUR';
+  document.getElementById('pp-cancelled').textContent=cancelled.length;
+  const el=document.getElementById('pp-subs-list');
+  if(!subs.length){el.innerHTML='<div class="empty-state"><div class="es-icon">💳</div><div>Aucun abonne autonomie pour l'instant.</div></div>';return;}
+  el.innerHTML=subs.map(s=>{
+    const st=s.paymentStatus==='active'?'<span class="badge badge-green">Actif</span>':'<span class="badge badge-red">'+( s.paymentStatus||'Inactif')+'</span>';
+    return '<div class="client-row"><div class="avatar" style="width:36px;height:36px;font-size:13px">'+ini(s.fname,s.lname)+'</div><div style="flex:1"><div style="font-weight:700">'+s.fname+' '+s.lname+'</div><div class="sub" style="font-size:11px;font-family:monospace">'+(s.paypalSubscriptionId||'no sub id')+'</div></div><div>'+st+'<button onclick="toggleSubStatus(''+s.email+'')" style="margin-top:4px;font-size:10px;background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;padding:3px 8px;cursor:pointer;font-family:Montserrat,sans-serif">'+(s.paymentStatus==='active'?'Suspendre':'Activer')+'</button></div></div>';
+  }).join('');
+}
+
+function toggleSubStatus(email){
+  const users=DB.get('users')||{};
+  const u=users[email];
+  if(!u) return;
+  u.paymentStatus=u.paymentStatus==='active'?'cancelled':'active';
+  users[email]=u;
+  DB.set('users',users);
+  toast(u.fname+': '+u.paymentStatus);
+  loadMonetisationTab();
+}
+
+function savePaypalSettings(){
+  const cid=document.getElementById('pp-client-id').value.trim();
+  const pid=document.getElementById('pp-plan-id').value.trim();
+  if(!cid||!pid){toast('Remplis les deux champs');return;}
+  currentUser.paypalClientId=cid;
+  currentUser.paypalPlanId=pid;
+  const users=DB.get('users')||{};
+  users[currentUser.email]=currentUser;
+  DB.set('users',users);DB.set('session',currentUser);
+  const st=document.getElementById('pp-status');
+  st.style.display='';st.textContent='Configuration sauvegardee';
+  setTimeout(()=>st.style.display='none',3000);
+  toast('PayPal configure');
+}
+
+// ── Coach: generate student access code ──
+let lastGeneratedCode=null;
+function generateStudentCode(){
+  const name=document.getElementById('sc-name').value.trim();
+  const months=parseInt(document.getElementById('sc-duration').value)||3;
+  if(!name){toast('Entre le nom de l'eleve');return;}
+  const expiry=Date.now()+(months*30*24*60*60*1000);
+  const payload={
+    coachId:currentUser.id,
+    coachName:currentUser.fname+' '+currentUser.lname,
+    coachCode:currentUser.code,
+    studentName:name,
+    expiry:expiry,
+    months:months,
+    codeId:'sc_'+Date.now()
+  };
+  const token='RCACCESS:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  // Store in coach's studentCodes
+  if(!currentUser.studentCodes) currentUser.studentCodes=[];
+  currentUser.studentCodes.push({...payload,token,usedBy:null,active:true,createdAt:Date.now()});
+  const users=DB.get('users')||{};
+  users[currentUser.email]=currentUser;
+  DB.set('users',users);DB.set('session',currentUser);
+  // Display
+  lastGeneratedCode=token;
+  document.getElementById('sc-code-val').textContent=token;
+  const exp=new Date(expiry);
+  document.getElementById('sc-expiry-info').textContent='Acces pour '+name+' - expire le '+exp.toLocaleDateString('fr-FR')+' ('+months+' mois)';
+  document.getElementById('sc-result').style.display='';
+  loadStudentCodes();
+}
+function copyStudentCode(){
+  if(!lastGeneratedCode) return;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(lastGeneratedCode).then(()=>toast('Code copie. Envoie-le a l'eleve par WhatsApp/SMS'));
+  } else {
+    const t=document.createElement('textarea');t.value=lastGeneratedCode;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();
+    toast('Code copie');
+  }
+}
+function loadStudentCodes(){
+  const codes=currentUser.studentCodes||[];
+  const el=document.getElementById('sc-list');
+  if(!codes.length){el.innerHTML='<div class="empty-state"><div class="es-icon">🎫</div><div>Aucun code genere encore.</div></div>';return;}
+  const now=Date.now();
+  el.innerHTML=[...codes].reverse().map((c,ri)=>{
+    const i=codes.length-1-ri;
+    const expired=now>c.expiry;
+    const exp=new Date(c.expiry);
+    const st=!c.active?'<span class="badge badge-gray">Desactive</span>':expired?'<span class="badge badge-red">Expire</span>':'<span class="badge badge-green">Actif</span>';
+    const used=c.usedBy?'<div style="font-size:10px;color:var(--sub)">Utilise par: '+c.usedBy+'</div>':'<div style="font-size:10px;color:var(--sub)">Non utilise</div>';
+    return '<div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:12px;padding:14px;margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+      +'<div style="font-weight:700">'+c.studentName+'</div>'+st+'</div>'
+      +'<div style="font-size:11px;color:#888;margin-bottom:4px">Expire: '+exp.toLocaleDateString('fr-FR')+' ('+c.months+' mois)</div>'
+      +used
+      +'<div style="display:flex;gap:8px;margin-top:10px">'
+      +'<button onclick="toggleStudentCode('+i+')" style="flex:1;background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px;font-family:Montserrat,sans-serif;font-size:10px;cursor:pointer;font-weight:700">'+(c.active?'Desactiver':'Activer')+'</button>'
+      +'<button onclick="extendStudentCode('+i+')" style="flex:1;background:none;border:1px solid #1a3a1a;color:var(--green);border-radius:8px;padding:7px;font-family:Montserrat,sans-serif;font-size:10px;cursor:pointer;font-weight:700">+3 mois</button>'
+      +'<button onclick="copyExistingCode('+i+')" style="flex:1;background:none;border:1px solid #1a1a3a;color:#7ab;border-radius:8px;padding:7px;font-family:Montserrat,sans-serif;font-size:10px;cursor:pointer;font-weight:700">Copier</button>'
+      +'</div></div>';
+  }).join('');
+}
+function toggleStudentCode(i){
+  if(!currentUser.studentCodes||!currentUser.studentCodes[i]) return;
+  currentUser.studentCodes[i].active=!currentUser.studentCodes[i].active;
+  const users=DB.get('users')||{};users[currentUser.email]=currentUser;
+  DB.set('users',users);DB.set('session',currentUser);
+  loadStudentCodes();
+  toast(currentUser.studentCodes[i].active?'Code active':'Code desactive');
+}
+function extendStudentCode(i){
+  if(!currentUser.studentCodes||!currentUser.studentCodes[i]) return;
+  const c=currentUser.studentCodes[i];
+  const base=Math.max(c.expiry,Date.now());
+  c.expiry=base+(3*30*24*60*60*1000);
+  c.months=(c.months||0)+3;
+  // Rebuild token with new expiry
+  const payload={coachId:currentUser.id,coachName:currentUser.fname+' '+currentUser.lname,coachCode:currentUser.code,studentName:c.studentName,expiry:c.expiry,months:c.months,codeId:c.codeId};
+  c.token='RCACCESS:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const users=DB.get('users')||{};users[currentUser.email]=currentUser;
+  DB.set('users',users);DB.set('session',currentUser);
+  loadStudentCodes();
+  toast('Acces prolonge de 3 mois');
+}
+function copyExistingCode(i){
+  if(!currentUser.studentCodes||!currentUser.studentCodes[i]) return;
+  const token=currentUser.studentCodes[i].token;
+  if(navigator.clipboard){navigator.clipboard.writeText(token).then(()=>toast('Code copie'));}
+  else{const t=document.createElement('textarea');t.value=token;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast('Code copie');}
+}
+
+// ═══════════════════════════════════════════════════
+// ATHLETE: Subscribe page
+// ═══════════════════════════════════════════════════
+function loadSubscribePage(){
+  document.getElementById('paypal-btn-container').innerHTML='<button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99EUR/mois</button>';
+}
+function initPaypalSubscription(){
+  // Find the coach's PayPal settings (use coachId if linked, else search for any coach with PayPal)
+  const users=DB.get('users')||{};
+  let coach=null;
+  if(currentUser.coachId){
+    coach=Object.values(users).find(u=>u.id===currentUser.coachId);
+  }
+  if(!coach){
+    coach=Object.values(users).find(u=>u.role==='coach'&&u.paypalClientId&&u.paypalPlanId);
+  }
+  if(!coach||!coach.paypalClientId||!coach.paypalPlanId){
+    toast('PayPal non configure par le coach. Contacte ton coach.');
+    return;
+  }
+  const clientId=coach.paypalClientId;
+  const planId=coach.paypalPlanId;
+  const coachId=coach.id;
+  const btn=document.getElementById('paypal-loading-btn');
+  if(btn){btn.textContent='Chargement PayPal...';btn.disabled=true;}
+  // Load PayPal SDK dynamically
+  if(document.getElementById('paypal-sdk')){
+    renderPaypalButton(planId,coachId);return;
+  }
+  const script=document.createElement('script');
+  script.id='paypal-sdk';
+  script.src='https://www.paypal.com/sdk/js?client-id='+clientId+'&vault=true&intent=subscription&currency=EUR';
+  script.onload=()=>renderPaypalButton(planId,coachId);
+  script.onerror=()=>{toast('Erreur chargement PayPal. Verifie la connexion.');if(btn){btn.textContent='Reessayer';btn.disabled=false;}};
+  document.head.appendChild(script);
+}
+function renderPaypalButton(planId,coachId){
+  const container=document.getElementById('paypal-btn-container');
+  container.innerHTML='<div id="paypal-buttons-inner"></div>';
+  if(typeof paypal==='undefined'){toast('PayPal non charge');return;}
+  paypal.Buttons({
+    style:{layout:'vertical',color:'black',shape:'rect',label:'subscribe'},
+    createSubscription:function(data,actions){
+      return actions.subscription.create({'plan_id':planId});
+    },
+    onApprove:function(data){
+      // Subscription approved!
+      currentUser.status='AUTONOMIE_PREMIUM';
+      currentUser.paymentStatus='active';
+      currentUser.paypalSubscriptionId=data.subscriptionID;
+      currentUser.coachId=coachId;
+      const users=DB.get('users')||{};
+      users[currentUser.email]=currentUser;
+      DB.set('users',users);DB.set('session',currentUser);
+      toast('Abonnement active ! Bienvenue sur RepCore Premium');
+      setTimeout(()=>{loadClientHome();},1500);
+    },
+    onError:function(err){
+      toast('Erreur paiement. Reessaie.');
+      console.error('PayPal error',err);
+    }
+  }).render('#paypal-buttons-inner');
+}
+
+// ═══════════════════════════════════════════════════
+// ATHLETE: link coach with RCACCESS token (extend doLinkCoach)
+// ═══════════════════════════════════════════════════
 
 </script>

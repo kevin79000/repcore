@@ -14,9 +14,22 @@
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:#030303}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#080808;--red:#C60F08;--red2:#9b0c07;--dark:#0f0f0f;--card:#131313;--card2:#1a1a1a;--border:#222;--sub:#666;--text:#f0f0f0;--green:#22c55e;--orange:#f97316}
 body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;min-height:100vh;max-width:480px;margin:0 auto;overflow-x:hidden;position:relative}
+/* ── DESKTOP: fond brande autour de l'app ── */
+@media(min-width:600px){
+  html{background:radial-gradient(ellipse at 50% 0%,#1a0000 0%,#060606 50%,#030303 100%);min-height:100vh}
+  body{border-left:1px solid #1a0000;border-right:1px solid #1a0000;box-shadow:0 0 100px rgba(198,15,8,.12);min-height:100vh}
+}
+/* ── DESKTOP COACH DASHBOARD ── */
+@media(min-width:800px){
+  #s-coach-home{flex-direction:row!important;height:100vh;min-height:100vh}
+  #ch-sidebar{width:200px;min-width:200px;background:#040404;border-right:1px solid #1a0000;display:flex;flex-direction:column;flex-shrink:0}
+  #ch-main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .ct-panel-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #coach-tabs-bar{display:none!important}
+}
 
 /* ====== GRAIN TEXTURE GLOBAL ====== */
 body::after{content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:1;
@@ -315,94 +328,178 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       <p style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:12px">Génère un lien d'invitation à envoyer par WhatsApp ou SMS. L'athlète le colle dans le champ code.</p>
       <button class="btn btn-outline" style="font-size:11px;letter-spacing:1px" onclick="copyCoachInviteLink()">📋 Copier le lien d'invitation</button>
     </div>
-    <button class="btn btn-red" style="margin-top:20px" onclick="go('<div id="s-coach-home" class="screen">
-  <!-- Brand header -->
-  <div style="background:linear-gradient(135deg,#0f0000,#160000);border-bottom:1px solid #2a0000;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative;overflow:hidden">
-    <div style="position:absolute;right:0;top:0;width:80px;height:100%;background:linear-gradient(135deg,transparent 40%,#C60F0810 40%,#C60F0818 60%,transparent 61%);pointer-events:none"></div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <img id="ch-logo-badge" style="width:44px;height:44px;object-fit:contain;border-radius:50%;background:#111;border:1.5px solid #333">
-      <div>
-        <div style="font-size:9px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase">COACH</div>
-        <div style="font-size:15px;font-weight:900;letter-spacing:-0.3px" id="ch-name"></div>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <button onclick="showCoachCode()" style="background:var(--card2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px">CODE</button>
-      <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 10px;font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer">X</button>
-    </div>
-  </div>
-  <!-- Tabs -->
-  <div style="display:flex;border-bottom:1px solid #1a0000;flex-shrink:0;background:#080808">
-    <button id="ct-tab-dashboard" onclick="coachTab('dashboard')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid var(--red);color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">ATHLETES</button>
-    <button id="ct-tab-codes" onclick="coachTab('codes')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">CODES</button>
-    <button id="ct-tab-monetisation" onclick="coachTab('monetisation')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">PAIEMENTS</button>
-  </div>
-  <!-- Tab: Athletes -->
-  <div id="ct-dashboard" class="scroll-area" style="flex:1">
-    <div class="pad">
-      <div style="display:flex;gap:10px;margin-bottom:20px">
-        <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athletes</div></div>
-        <div class="metric-box"><div class="metric-val" id="ch-active" style="color:var(--green)">0</div><div class="metric-label">Actifs</div></div>
-        <div class="metric-box"><div class="metric-val" id="ch-alerts" style="color:var(--red)">0</div><div class="metric-label">Alertes</div></div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h2>Mes athletes</h2></div>
-        <button class="btn btn-red btn-sm" onclick="openAddAthlete()" style="letter-spacing:1px">+ Ajouter</button>
-      </div>
-      <div class="sub" style="font-size:11px;margin-bottom:14px;font-family:monospace;letter-spacing:2px" id="ch-code-small"></div>
-      <div id="ch-clients-list"></div>
-    </div>
-  </div>
-  <!-- Tab: Codes -->
-  <div id="ct-codes" class="scroll-area" style="flex:1;display:none">
-    <div class="pad">
-      <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div>
-      <h2 style="margin-bottom:4px">Codes acces eleves</h2>
-      <p class="sub" style="font-size:12px;margin-bottom:20px">Genere un code avec une duree d'acces pour chaque eleve.</p>
-      <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
-        <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:14px">NOUVEAU CODE</div>
-        <div style="margin-bottom:12px"><label>Nom de l'eleve</label><input id="sc-name" placeholder="Prenom Nom"></div>
-        <div style="margin-bottom:14px">
-          <label>Duree d'acces</label>
-          <select id="sc-duration" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:#fff;padding:12px 14px;border-radius:10px;font-family:Montserrat,sans-serif;font-size:13px">
-            <option value="1">1 mois</option><option value="3" selected>3 mois</option><option value="6">6 mois</option><option value="12">12 mois</option>
-          </select>
+    <button class="btn btn-red" style="margin-top:20px" onclick="go('<div id="s-coach-home" class="screen" style="flex-direction:row">
+
+  <!-- SIDEBAR (desktop only) -->
+  <div id="ch-sidebar" style="display:none">
+    <div style="padding:20px 16px;border-bottom:1px solid #1a0000">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <img id="ch-logo-badge" style="width:36px;height:36px;object-fit:cover;border-radius:8px;border:1px solid #2a0000;flex-shrink:0">
+        <div>
+          <div style="font-size:8px;color:var(--red);letter-spacing:2px;font-weight:800">COACH</div>
+          <div style="font-size:13px;font-weight:900" id="ch-name-sidebar"></div>
         </div>
-        <button class="btn btn-red" onclick="generateStudentCode()" style="letter-spacing:1px">Generer le code</button>
-        <div id="sc-result" style="display:none;margin-top:16px">
-          <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:10px;padding:14px">
-            <div style="font-size:10px;color:var(--sub);letter-spacing:2px;margin-bottom:6px">CODE GENERE</div>
-            <div id="sc-code-val" style="font-family:monospace;font-size:12px;color:var(--green);word-break:break-all;margin-bottom:10px"></div>
-            <div style="font-size:11px;color:#aaa;margin-bottom:12px" id="sc-expiry-info"></div>
-            <button class="btn btn-outline" onclick="copyStudentCode()" style="font-size:11px">Copier et envoyer</button>
+      </div>
+      <div style="font-size:10px;color:#333;font-family:monospace;letter-spacing:1px" id="ch-code-sidebar"></div>
+    </div>
+    <div style="padding:12px 8px;flex:1">
+      <button id="sb-tab-dashboard" onclick="coachTab('dashboard')" style="width:100%;text-align:left;padding:12px 14px;background:var(--card);border:none;border-radius:10px;color:#fff;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:6px;letter-spacing:1px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:16px">👥</span> ATHLETES
+      </button>
+      <button id="sb-tab-codes" onclick="coachTab('codes')" style="width:100%;text-align:left;padding:12px 14px;background:none;border:none;border-radius:10px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:6px;letter-spacing:1px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:16px">🎫</span> CODES ACCES
+      </button>
+      <button id="sb-tab-monetisation" onclick="coachTab('monetisation')" style="width:100%;text-align:left;padding:12px 14px;background:none;border:none;border-radius:10px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;margin-bottom:6px;letter-spacing:1px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:16px">💳</span> PAIEMENTS
+      </button>
+    </div>
+    <div style="padding:16px">
+      <button onclick="showCoachCode()" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:9px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-bottom:8px">MON CODE</button>
+      <button onclick="logout()" style="width:100%;background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:9px;font-family:Montserrat,sans-serif;font-size:10px;cursor:pointer">DECONNEXION</button>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="ch-main-area" style="flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden">
+
+    <!-- Mobile header (hidden on desktop via CSS) -->
+    <div id="ch-mobile-header" style="background:linear-gradient(135deg,#0f0000,#160000);border-bottom:1px solid #2a0000;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:12px">
+        <img id="ch-logo-badge-mobile" style="width:40px;height:40px;object-fit:cover;border-radius:8px;border:1px solid #2a0000">
+        <div>
+          <div style="font-size:9px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase">COACH</div>
+          <div style="font-size:15px;font-weight:900" id="ch-name"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="showCoachCode()" style="background:var(--card2);border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 12px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px">CODE</button>
+        <button onclick="logout()" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:8px;padding:7px 10px;font-family:Montserrat,sans-serif;font-size:12px;cursor:pointer">X</button>
+      </div>
+    </div>
+
+    <!-- Mobile tabs (hidden on desktop) -->
+    <div id="coach-tabs-bar" style="display:flex;border-bottom:1px solid #1a0000;flex-shrink:0;background:#080808">
+      <button id="ct-tab-dashboard" onclick="coachTab('dashboard')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid var(--red);color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">ATHLETES</button>
+      <button id="ct-tab-codes" onclick="coachTab('codes')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">CODES</button>
+      <button id="ct-tab-monetisation" onclick="coachTab('monetisation')" style="flex:1;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;cursor:pointer">PAIEMENTS</button>
+    </div>
+
+    <!-- Tab panels -->
+    <div id="ct-dashboard" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column">
+      <div class="pad">
+        <div style="display:flex;gap:10px;margin-bottom:20px;padding-top:4px">
+          <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athletes</div></div>
+          <div class="metric-box"><div class="metric-val" id="ch-active" style="color:var(--green)">0</div><div class="metric-label">Actifs</div></div>
+          <div class="metric-box"><div class="metric-val" id="ch-alerts" style="color:var(--red)">0</div><div class="metric-label">Alertes</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h2>Mes athletes</h2></div>
+          <button class="btn btn-red btn-sm" onclick="openAddAthlete()" style="letter-spacing:1px">+ Ajouter</button>
+        </div>
+        <div class="sub" style="font-size:11px;margin-bottom:14px;font-family:monospace;letter-spacing:2px" id="ch-code-small"></div>
+        <div id="ch-clients-list"></div>
+      </div>
+    </div>
+
+    <div id="ct-codes" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column">
+      <div class="pad">
+        <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
+        <h2 style="margin-bottom:4px">Codes acces eleves</h2>
+        <p class="sub" style="font-size:12px;margin-bottom:20px">Genere un code personnalise avec une duree d'acces pour chaque eleve. Envoie-le par WhatsApp ou SMS.</p>
+        <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:14px">NOUVEAU CODE</div>
+          <div style="margin-bottom:12px"><label>Nom de l'eleve</label><input id="sc-name" placeholder="Ex: Marie Martin"></div>
+          <div style="margin-bottom:14px">
+            <label>Duree d'acces</label>
+            <select id="sc-duration" style="width:100%;background:#1a1a1a;border:1px solid var(--border);color:#fff;padding:12px 14px;border-radius:10px;font-family:Montserrat,sans-serif;font-size:13px;cursor:pointer">
+              <option value="1">1 mois</option>
+              <option value="3" selected>3 mois (recommande)</option>
+              <option value="6">6 mois</option>
+              <option value="12">12 mois - 1 an</option>
+            </select>
+          </div>
+          <button class="btn btn-red" onclick="generateStudentCode()" style="letter-spacing:1px">Generer le code acces</button>
+          <div id="sc-result" style="display:none;margin-top:16px">
+            <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:10px;padding:16px">
+              <div style="font-size:10px;color:var(--sub);letter-spacing:2px;margin-bottom:8px">CODE ACCES GENERE</div>
+              <div id="sc-code-val" style="font-family:monospace;font-size:11px;color:#4ade80;word-break:break-all;line-height:1.6;margin-bottom:10px;background:#050f05;padding:10px;border-radius:6px"></div>
+              <div style="font-size:12px;color:#aaa;margin-bottom:14px" id="sc-expiry-info"></div>
+              <button class="btn btn-outline" onclick="copyStudentCode()" style="font-size:12px;letter-spacing:1px">Copier et envoyer par WhatsApp</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="width:20px;height:2px;background:var(--red)"></div>
+            <h3>Codes generes</h3>
+          </div>
+          <div id="sc-list">
+            <div style="text-align:center;padding:40px 20px;color:#444">
+              <div style="font-size:36px;margin-bottom:12px;opacity:0.4">🎫</div>
+              <div style="font-size:13px">Aucun code genere encore.<br>Utilise le formulaire ci-dessus.</div>
+            </div>
           </div>
         </div>
       </div>
-      <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h3 style="margin-bottom:14px">Codes generes</h3><div id="sc-list"></div></div>
     </div>
-  </div>
-  <!-- Tab: Paiements -->
-  <div id="ct-monetisation" class="scroll-area" style="flex:1;display:none">
-    <div class="pad">
-      <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div>
-      <h2 style="margin-bottom:4px">Monetisation</h2>
-      <p class="sub" style="font-size:12px;margin-bottom:20px">Connecte ton PayPal pour recevoir les abonnements autonomie de tes eleves.</p>
-      <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
-        <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px;margin-bottom:16px">CONFIGURATION PAYPAL LIVE</div>
-        <div style="margin-bottom:12px"><label>Client ID PayPal (developer.paypal.com)</label><input id="pp-client-id" placeholder="AY..." style="font-size:11px;font-family:monospace"></div>
-        <div style="margin-bottom:14px"><label>Plan ID abonnement 9,99EUR/mois</label><input id="pp-plan-id" placeholder="P-..." style="font-size:11px;font-family:monospace"></div>
-        <button class="btn btn-red" onclick="savePaypalSettings()" style="letter-spacing:1px">Sauvegarder</button>
-        <div id="pp-status" style="margin-top:10px;font-size:12px;color:var(--green);display:none">Configuration sauvegardee</div>
-        <div style="margin-top:14px;background:#080808;border-radius:8px;padding:12px;font-size:11px;color:#555;line-height:1.7"><strong style="color:#888">Comment :</strong><br>1. developer.paypal.com - My Apps - Creer app - copier Client ID<br>2. PayPal - Products and Plans - creer plan 9,99EUR/mois - copier Plan ID</div>
+
+    <div id="ct-monetisation" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column">
+      <div class="pad">
+        <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
+        <h2 style="margin-bottom:4px">Monetisation</h2>
+        <p class="sub" style="font-size:12px;margin-bottom:20px">Configure ton compte PayPal pour recevoir les abonnements 9,99EUR/mois de tes eleves en autonomie.</p>
+
+        <!-- PayPal config -->
+        <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:36px;height:36px;background:#0a3a0a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏦</div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:var(--red);letter-spacing:2px">CONFIGURATION PAYPAL</div>
+              <div id="pp-config-status" style="font-size:11px;color:#666">Non configure</div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label>Client ID PayPal</label>
+            <input id="pp-client-id" placeholder="AY... (depuis developer.paypal.com)" style="font-size:11px;font-family:monospace">
+          </div>
+          <div style="margin-bottom:16px">
+            <label>Plan ID abonnement 9,99EUR/mois</label>
+            <input id="pp-plan-id" placeholder="P-... (depuis PayPal Products and Plans)" style="font-size:11px;font-family:monospace">
+          </div>
+          <button class="btn btn-red" onclick="savePaypalSettings()" style="letter-spacing:1px">Sauvegarder la configuration</button>
+          <div id="pp-status" style="margin-top:10px;font-size:13px;color:var(--green);display:none;font-weight:700">Configuration sauvegardee</div>
+          <div style="margin-top:16px;background:#080808;border:1px solid #111;border-radius:10px;padding:14px;font-size:11px;color:#555;line-height:1.8">
+            <strong style="color:#888;display:block;margin-bottom:6px">Comment configurer PayPal :</strong>
+            1. Va sur developer.paypal.com avec ton compte guellec.coachingpro@gmail.com<br>
+            2. My Apps and Credentials > Create App > copie le Client ID (commence par AY)<br>
+            3. PayPal dashboard > Products and Plans > New Plan > 9,99EUR/mois > copie le Plan ID (commence par P-)
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:flex;gap:10px;margin-bottom:20px">
+          <div class="metric-box"><div class="metric-val" id="pp-total-subs" style="color:var(--green)">0</div><div class="metric-label">Abonnes actifs</div></div>
+          <div class="metric-box"><div class="metric-val" id="pp-mrr" style="color:var(--green)">0 EUR</div><div class="metric-label">MRR estime</div></div>
+          <div class="metric-box"><div class="metric-val" id="pp-cancelled">0</div><div class="metric-label">Annules</div></div>
+        </div>
+
+        <!-- Subscribers -->
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="width:20px;height:2px;background:var(--red)"></div>
+            <h3>Abonnes autonomie</h3>
+          </div>
+          <div id="pp-subs-list">
+            <div style="text-align:center;padding:40px 20px;color:#444">
+              <div style="font-size:36px;margin-bottom:12px;opacity:0.4">💳</div>
+              <div style="font-size:13px">Aucun abonne encore.<br>Configure PayPal ci-dessus, puis partage la page d'abonnement a tes eleves.</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:20px">
-        <div class="metric-box"><div class="metric-val" id="pp-total-subs" style="color:var(--green)">0</div><div class="metric-label">Abonnes</div></div>
-        <div class="metric-box"><div class="metric-val" id="pp-mrr" style="color:var(--green)">0EUR</div><div class="metric-label">MRR</div></div>
-        <div class="metric-box"><div class="metric-val" id="pp-cancelled">0</div><div class="metric-label">Annules</div></div>
-      </div>
-      <div><div style="width:20px;height:2px;background:var(--red);margin-bottom:8px"></div><h3 style="margin-bottom:14px">Abonnes autonomie</h3><div id="pp-subs-list"></div></div>
     </div>
-  </div>
+
+  </div><!-- end #ch-main-area -->
 </div>
 <!-- COACH CLIENT DETAIL -->
 <div id="s-coach-client" class="screen">
@@ -1227,9 +1324,24 @@ function qPrev(){if(qStep>0){qStep--;renderQ();}}
 function loadCoachHome(){
   go('s-coach-home');
   const u=currentUser;
-  // ch-avatar replaced by logo badge
-  document.getElementById('ch-name').textContent=u.fname+' '+u.lname;
-  document.getElementById('ch-code-small').textContent='Code: '+u.code;
+  const fullName=u.fname+' '+u.lname;
+  const el=document.getElementById('ch-name');if(el)el.textContent=fullName;
+  const elSb=document.getElementById('ch-name-sidebar');if(elSb)elSb.textContent=fullName;
+  const codeEl=document.getElementById('ch-code-small');if(codeEl)codeEl.textContent='Code: '+u.code;
+  const codeSb=document.getElementById('ch-code-sidebar');if(codeSb)codeSb.textContent=u.code;
+  // Show desktop sidebar if wide screen
+  const sidebar=document.getElementById('ch-sidebar');
+  const mobileHeader=document.getElementById('ch-mobile-header');
+  const tabsBar=document.getElementById('coach-tabs-bar');
+  if(window.innerWidth>=800){
+    if(sidebar) sidebar.style.display='flex';
+    if(mobileHeader) mobileHeader.style.display='none';
+    if(tabsBar) tabsBar.style.display='none';
+  } else {
+    if(sidebar) sidebar.style.display='none';
+    if(mobileHeader) mobileHeader.style.display='flex';
+    if(tabsBar) tabsBar.style.display='flex';
+  }
   const clients=getClients();
   document.getElementById('ch-total').textContent=clients.length;
   document.getElementById('ch-active').textContent=clients.filter(c=>isActive(c)).length;
@@ -3313,7 +3425,7 @@ if('serviceWorker' in navigator){
 }
 
 function initLogos(){
-  const ids=['splash-logo-img','welcome-logo','ch-logo-badge','clh-logo-badge','login-logo-top'];
+  const ids=['splash-logo-img','welcome-logo','ch-logo-badge','ch-logo-badge-mobile','clh-logo-badge','login-logo-top'];
   ids.forEach(id=>{const el=document.getElementById(id);if(el)el.src=LOGO_BADGE;});
   const s=document.getElementById('welcome-signa');if(s)s.src=LOGO_SIGNA;
   const ph=document.getElementById('welcome-photo');if(ph)ph.src=COACH_PHOTO;
@@ -3328,11 +3440,18 @@ function coachTab(tab){
   const tabs=['dashboard','codes','monetisation'];
   tabs.forEach(t=>{
     const panel=document.getElementById('ct-'+t);
+    if(panel) panel.style.display=t===tab?'flex':'none';
+    // Mobile tabs
     const btn=document.getElementById('ct-tab-'+t);
-    if(panel) panel.style.display=t===tab?'':'none';
     if(btn){
       btn.style.borderBottom=t===tab?'2px solid var(--red)':'2px solid transparent';
       btn.style.color=t===tab?'#fff':'var(--sub)';
+    }
+    // Desktop sidebar buttons
+    const sb=document.getElementById('sb-tab-'+t);
+    if(sb){
+      sb.style.background=t===tab?'var(--card)':'none';
+      sb.style.color=t===tab?'#fff':'var(--sub)';
     }
   });
   if(tab==='codes') loadStudentCodes();
@@ -3342,8 +3461,11 @@ function coachTab(tab){
 // ── Coach: load PayPal settings into inputs ──
 function loadMonetisationTab(){
   const u=currentUser;
-  if(u.paypalClientId) document.getElementById('pp-client-id').value=u.paypalClientId;
-  if(u.paypalPlanId) document.getElementById('pp-plan-id').value=u.paypalPlanId;
+  const cidEl=document.getElementById('pp-client-id');if(cidEl&&u.paypalClientId) cidEl.value=u.paypalClientId;
+  const pidEl=document.getElementById('pp-plan-id');if(pidEl&&u.paypalPlanId) pidEl.value=u.paypalPlanId;
+  const cfgSt=document.getElementById('pp-config-status');
+  if(cfgSt) cfgSt.textContent=(u.paypalClientId&&u.paypalPlanId)?'Configure (PayPal actif)':'Non configure';
+  if(cfgSt&&u.paypalClientId&&u.paypalPlanId) cfgSt.style.color='var(--green)';
   // Calc stats from all users
   const users=DB.get('users')||{};
   const subs=Object.values(users).filter(x=>x.status==='AUTONOMIE_PREMIUM'&&x.coachId===u.id);

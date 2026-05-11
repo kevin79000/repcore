@@ -111,6 +111,7 @@ h3{font-size:15px;font-weight:700;letter-spacing:0.3px}
 .ex-detail{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.3px}
 .series-table{width:100%;border-collapse:collapse}
 .series-table th{background:#0f0f0f;color:var(--sub);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:8px 10px;text-align:center;border-bottom:1px solid var(--border)}
+select.set-input{width:auto!important;min-width:60px;font-size:11px;padding:5px 3px;cursor:pointer}
 .series-table td{padding:10px;text-align:center;border-top:1px solid #181818;font-size:13px;font-weight:600}
 .series-table tr.done td{background:#16532210;color:var(--green)}
 .set-input{width:56px;background:#0f0f0f;border:1px solid #2a2a2a;border-radius:3px;color:#fff;text-align:center;padding:7px 4px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800}
@@ -2141,14 +2142,14 @@ function renderWoEx(){
       </div>`:''}
 
       <div style="overflow-x:auto">
-      <table class="series-table" style="width:100%;min-width:${pr.type==='degressive'?(showCycleCol?'580px':'480px'):(showCycleCol?'500px':'380px')}">
+      <table class="series-table" style="width:100%;min-width:${pr.type==='degressive'?(showCycleCol?'600px':'500px'):(showCycleCol?'480px':'360px')}">
         <thead>
           <tr>
             <th>#</th>
-            ${pr.type==='degressive'?`<th style="color:#fca5a5">Charge P1 (kg)</th><th style="color:#fdba74">Charge P2 (kg)</th>`:`<th>Charge (kg)</th>`}
-            ${showCycleCol?`<th style="color:#c4b5fd">Cycle (kg)</th>`:''}
-            <th>RIR réel</th>
-            <th>Douleur (1-6)</th>
+            ${pr.type==='degressive'?`<th style="color:#fca5a5">P1 (kg)</th><th style="color:#fdba74">P2 (kg)</th>`:`<th>Charge (kg)</th>`}
+            ${showCycleCol?`<th style="color:#c4b5fd">Cycle</th>`:''}
+            <th>RIR</th>
+            <th style="font-size:9px">Douleur</th>
             <th>✓</th>
           </tr>
         </thead>
@@ -2169,30 +2170,77 @@ function renderSets(ex,data){
   const isFemme=currentUser.gender==='femme';
   const showCycleCol=isFemme&&cycle.factor!==1.0;
   const isDeg=data.sets[0]?.degressive||false;
+
+  // ── RIR multipliers ──────────────────────────────────────────────
+  const RIR_MULT={'echec':0.95,'0':1.0,'1':1.025,'2':1.05,'3':1.075,'4':1.1,'5':1.125};
+
+  // ── Auto-fill next set weight from previous weight × RIR ─────────
+  for(let i=0;i<data.sets.length-1;i++){
+    const s=data.sets[i];
+    const w=parseFloat(s.weight);
+    if(w>0 && s.rir!==''&&s.rir!==undefined&&s.rir!==null){
+      const mult=RIR_MULT[String(s.rir)]??1.0;
+      const nextW=Math.round(w*mult/2.5)*2.5;
+      if(!data.sets[i+1].done&&!data.sets[i+1].userEdited){
+        data.sets[i+1].weight=nextW;
+        data.sets[i+1].isAuto=true;
+      }
+    }
+  }
+
+  const RIR_OPTS=['echec','0','1','2','3','4','5'];
+  const PAIN_OPTS=['1','2','3','4','5','6'];
+
   tb.innerHTML=data.sets.map((s,i)=>{
     const baseW=parseFloat(s.weight)||0;
-    const cycleW=baseW>0?Math.round(baseW*cycle.factor/2.5)*2.5:null;
+    const cycleW=showCycleCol&&baseW>0?Math.round(baseW*cycle.factor/2.5)*2.5:null;
+    const dis=s.done?'disabled':'';
+    const rowCls=s.done?'done':'';
+
+    const onChW=`woState.sessionData[woState.currentEx].sets[${i}].weight=this.value;woState.sessionData[woState.currentEx].sets[${i}].userEdited=true;woState.sessionData[woState.currentEx].sets[${i}].isAuto=false;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
+    const onChW2=`woState.sessionData[woState.currentEx].sets[${i}].weight2=this.value;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
+    const onChR=`woState.sessionData[woState.currentEx].sets[${i}].rir=this.value;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
+    const onChP=`woState.sessionData[woState.currentEx].sets[${i}].pain=this.value`;
+
+    // Weight cell (with AUTO badge)
+    const autoLabel=s.isAuto&&!s.done?'<div style="font-size:8px;color:var(--green);text-align:center;margin-top:2px;letter-spacing:1px">AUTO</div>':'';
+    const weightBorder=s.isAuto&&!s.done?'border-color:var(--green)':'';
+
+    const weightCell=isDeg
+      ?`<td><input class="set-input" type="number" value="${s.weight||''}" placeholder="P1" style="border-color:#9a3412" onchange="${onChW}" ${dis}></td><td><input class="set-input" type="number" value="${s.weight2||''}" placeholder="P2" style="border-color:#78350f" onchange="${onChW2}" ${dis}></td>`
+      :`<td><input class="set-input" type="number" value="${s.weight||''}" placeholder="kg" style="${weightBorder}" onchange="${onChW}" ${dis}>${autoLabel}</td>`;
+
+    // Cycle cell
+    const cycleCell=showCycleCol?`<td style="color:#c4b5fd;font-weight:800;font-size:13px">${cycleW?cycleW+'kg':'—'}</td>`:'';
+
+    // RIR dropdown
+    const rirSelect=`<select class="set-input" onchange="${onChR}" ${dis} style="padding:4px 2px;font-size:11px;min-width:64px">
+      <option value="">RIR</option>
+      ${RIR_OPTS.map(v=>`<option value="${v}" ${String(s.rir)===v?'selected':''}>${v==='echec'?'Échec':v==='0'?'0 ✓':v}</option>`).join('')}
+    </select>`;
+
+    // Pain dropdown
+    const painSelect=`<select class="set-input" onchange="${onChP}" ${dis} style="padding:4px 2px;font-size:11px;min-width:48px">
+      <option value="">—</option>
+      ${PAIN_OPTS.map(v=>`<option value="${v}" ${String(s.pain)===v?'selected':''}>${v}</option>`).join('')}
+    </select>`;
+
+    // Done button
     const doneClr=s.done?'var(--green)':'var(--border)';
     const doneBg=s.done?'var(--green)':'transparent';
     const doneC=s.done?'#fff':'var(--sub)';
-    const dis=s.done?'disabled':'';
-    const onChW=`woState.sessionData[woState.currentEx].sets[${i}].weight=this.value;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
-    const onChW2=`woState.sessionData[woState.currentEx].sets[${i}].weight2=this.value;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
-    const onChR=`woState.sessionData[woState.currentEx].sets[${i}].rir=this.value;renderSets(woState.exercises[woState.currentEx],woState.sessionData[woState.currentEx])`;
-    return `<tr class="${s.done?'done':''}">
-      <td style="font-weight:800;color:${(s.rir==='0'||s.rir===0)?'var(--green)':'inherit'}">${i+1}<br><span style="font-size:9px;color:var(--sub);font-weight:400">${s.reps||ex.reps}</span></td>
-      ${isDeg
-        ?`<td><input class="set-input" type="number" value="${s.weight||''}" placeholder="P1" style="border-color:#9a3412" onchange="${onChW}" ${dis}></td>
-           <td><input class="set-input" type="number" value="${s.weight2||''}" placeholder="P2" style="border-color:#78350f" onchange="${onChW2}" ${dis}></td>`
-        :`<td><input class="set-input" type="number" value="${s.weight||''}" placeholder="kg" onchange="${onChW}" ${dis}></td>`
-      }
-      ${showCycleCol?`<td style="color:#c4b5fd;font-weight:800">${cycleW?cycleW+'kg':'—'}</td>`:''}
-      <td><input class="set-input" type="number" value="${s.rir||''}" min="0" max="5" placeholder="RIR" onchange="${onChR}" ${dis}></td>
-      <td><input class="set-input" type="number" value="${s.pain||''}" placeholder="—" min="1" max="6" title="Douleur/Gêne 1-6" onchange="woState.sessionData[woState.currentEx].sets[${i}].pain=this.value" ${dis}></td>
+
+    return `<tr class="${rowCls}">
+      <td style="font-weight:800;color:${String(s.rir)==='0'?'var(--green)':'inherit'}">${i+1}<br><span style="font-size:9px;color:var(--sub);font-weight:400">${s.reps||ex.reps}</span></td>
+      ${weightCell}
+      ${cycleCell}
+      <td>${rirSelect}</td>
+      <td>${painSelect}</td>
       <td><button onclick="toggleSet(${i})" style="width:32px;height:32px;border-radius:50%;border:2px solid ${doneClr};background:${doneBg};color:${doneC};cursor:pointer;font-size:14px">${s.done?'✓':'○'}</button></td>
     </tr>`;
   }).join('');
 }
+
 
 // Récupère la dernière charge enregistrée à RIR 0 pour un exercice
 function getLastZeroRIRWeight(exName){

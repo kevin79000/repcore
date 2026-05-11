@@ -28,7 +28,7 @@ body{background:var(--bg);color:var(--text);font-family:'Montserrat',sans-serif;
   #ch-sidebar{width:200px;min-width:200px;background:#040404;border-right:1px solid #1a0000;display:flex;flex-direction:column;flex-shrink:0}
   #ch-main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
   .ct-panel-wrap{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  #coach-tabs-bar{display:none!important}
+  #coach-tabs-bar{display:none}
 }
 
 /* ====== GRAIN TEXTURE GLOBAL ====== */
@@ -1373,6 +1373,8 @@ function loadCoachHome(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${badge}<span style="font-size:11px;color:var(--sub)">${c.streak||0}🔥</span></div>
     </div>`;
   }).join('');
+  // Initialize default tab
+  coachTab('dashboard');
 }
 function getClients(){
   const users=DB.get('users')||{};

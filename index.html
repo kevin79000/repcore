@@ -265,8 +265,12 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       <div style="font-size:12px;color:#555;line-height:1.7;font-style:italic">"Le meilleur investissement que tu puisses faire, c'est en toi-même."</div>
     </div>
     <div class="gap" style="margin-top:20px">
-      <button class="btn btn-red" onclick="go('s-login')">SE CONNECTER</button>
-      <button class="btn btn-outline" onclick="go('s-register')">CRÉER UN COMPTE</button>
+      <button class="btn btn-red" onclick="go('s-login')" style="margin-bottom:10px;letter-spacing:2px">
+        🏋️ ESPACE COACH
+      </button>
+      <button class="btn btn-outline" onclick="go('s-athlete-entry')" style="letter-spacing:2px">
+        💪 ESPACE ATHLÈTE
+      </button>
     </div>
     <div style="margin-top:20px;text-align:center">
       <div style="font-size:9px;letter-spacing:3px;color:#333;text-transform:uppercase;font-weight:700">Kevin Guellec · Coach Diplômé d'État</div>
@@ -275,6 +279,49 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   </div>
   
 </div>
+
+<!-- ATHLETE ENTRY -->
+<div id="s-athlete-entry" class="screen">
+  <div class="topbar" style="border-bottom:1px solid var(--border)">
+    <button class="back-btn" onclick="go('s-welcome')">←</button>
+    <div style="height:32px;display:flex;align-items:center;gap:6px">
+      <div style="width:28px;height:28px;border-radius:6px;background:#0f0000;border:1.5px solid #C60F08;display:flex;align-items:center;justify-content:center">
+        <span style="font-size:10px;font-weight:900;font-family:Impact,sans-serif;color:#C60F08">RC</span>
+      </div>
+      <span style="font-size:11px;font-weight:800;letter-spacing:2px;color:#C60F08">REPCORE</span>
+    </div>
+    <span></span>
+  </div>
+  <div class="pad scroll-area gap" style="justify-content:center;flex:1">
+    <div style="margin-bottom:4px">
+      <div style="width:24px;height:2px;background:var(--red);margin-bottom:12px"></div>
+      <div style="font-size:20px;font-weight:900">Espace Athlète</div>
+      <div class="sub" style="font-size:12px;margin-top:4px">Connecte-toi ou entre ton code d'accès</div>
+    </div>
+
+    <!-- Option 1: J'ai un code coach -->
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--red);font-weight:800;margin-bottom:10px">▶ J'AI UN CODE COACH</div>
+      <input id="ae-code" type="text" placeholder="Entre ton code RCACCESS..." style="text-transform:uppercase;letter-spacing:2px;font-family:monospace">
+      <div id="ae-err" style="color:var(--red);font-size:11px;margin-top:6px;display:none"></div>
+      <button class="btn btn-red" onclick="doAthleteCode()" style="margin-top:12px">VALIDER LE CODE</button>
+    </div>
+
+    <div style="text-align:center;color:var(--sub);font-size:11px;letter-spacing:2px;margin:4px 0">— OU —</div>
+
+    <!-- Option 2: Déjà inscrit -->
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="font-size:11px;letter-spacing:2px;color:var(--sub);font-weight:800;margin-bottom:10px">▶ DÉJÀ INSCRIT</div>
+      <button class="btn btn-outline" onclick="go('s-login')">SE CONNECTER</button>
+    </div>
+
+    <!-- Option 3: Créer compte -->
+    <button class="btn" style="background:none;color:var(--sub);font-size:11px;margin-top:4px" onclick="go('s-register')">
+      Pas encore de compte ? Créer un compte athlète
+    </button>
+  </div>
+</div>
+
 
 <!-- LOGIN -->
 <div id="s-login" class="screen">
@@ -1222,6 +1269,39 @@ function copyCoachInviteLink(){
     const ta=document.createElement('textarea');ta.value=token;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
     toast('📋 Lien copié !');
   }
+}
+
+function doAthleteCode(){
+  const raw=(document.getElementById('ae-code').value||'').trim().toUpperCase();
+  const errEl=document.getElementById('ae-err');
+  errEl.style.display='none';
+  if(!raw){errEl.textContent='Entre un code valide.';errEl.style.display='block';return;}
+  // Try RCACCESS token (base64 JSON)
+  try{
+    const decoded=atob(raw.replace(/-/g,'+').replace(/_/g,'/'));
+    const data=JSON.parse(decoded);
+    if(data.type==='RCACCESS'&&data.coachId){
+      // Store pending code and redirect to register
+      localStorage.setItem('pendingRCACCESS', raw);
+      go('s-register');
+      return;
+    }
+  } catch(e){}
+  // Try as GCP student code
+  const users=DB.get('users')||{};
+  for(const coach of Object.values(users).filter(u=>u.role==='coach')){
+    const codes=coach.studentCodes||[];
+    const match=codes.find(c=>c.code===raw&&c.active);
+    if(match){
+      if(Date.now()>match.expiry){errEl.textContent='Ce code a expiré. Contacte ton coach.';errEl.style.display='block';return;}
+      localStorage.setItem('pendingStudentCode', raw);
+      localStorage.setItem('pendingCoachId', coach.id);
+      go('s-register');
+      return;
+    }
+  }
+  errEl.textContent='Code introuvable ou inactif.';
+  errEl.style.display='block';
 }
 function doLinkCoach(){
   const raw=document.getElementById('cc-code').value.trim();
@@ -3493,25 +3573,19 @@ document.addEventListener('DOMContentLoaded',initLogos);
 // MONETISATION — Coach tabs
 // ═══════════════════════════════════════════════════
 function coachTab(tab){
-  const tabs=['dashboard','codes','monetisation'];
-  tabs.forEach(t=>{
-    const panel=document.getElementById('ct-'+t);
-    if(panel) panel.style.display=t===tab?'flex':'none';
-    // Mobile tabs
-    const btn=document.getElementById('ct-tab-'+t);
-    if(btn){
-      btn.style.borderBottom=t===tab?'2px solid var(--red)':'2px solid transparent';
-      btn.style.color=t===tab?'#fff':'var(--sub)';
-    }
-    // Desktop sidebar buttons
-    const sb=document.getElementById('sb-tab-'+t);
-    if(sb){
-      sb.style.background=t===tab?'var(--card)':'none';
-      sb.style.color=t===tab?'#fff':'var(--sub)';
-    }
+  ['dashboard','codes','monetisation'].forEach(t=>{
+    // Panel visibility
+    const p=document.getElementById('ct-'+t);
+    if(p){p.style.cssText=p.style.cssText.replace(/display:[^;]+;?/g,'');p.style.display=t===tab?'flex':'none';}
+    // Top tab bar button
+    const b=document.getElementById('ct-tab-'+t);
+    if(b){b.style.borderBottom=t===tab?'2px solid var(--red)':'2px solid transparent';b.style.color=t===tab?'#fff':'var(--sub)';}
+    // Sidebar button
+    const s=document.getElementById('sb-tab-'+t);
+    if(s){s.style.background=t===tab?'rgba(198,15,8,.15)':'none';s.style.color=t===tab?'#fff':'var(--sub)';s.style.borderLeft=t===tab?'3px solid var(--red)':'3px solid transparent';}
   });
-  if(tab==='codes') loadStudentCodes();
-  if(tab==='monetisation') loadMonetisationTab();
+  if(tab==='codes'){try{loadStudentCodes();}catch(e){console.warn('loadStudentCodes:',e);}}
+  if(tab==='monetisation'){try{loadMonetisationTab();}catch(e){console.warn('loadMonetisationTab:',e);}}
 }
 
 // ── Coach: load PayPal settings into inputs ──

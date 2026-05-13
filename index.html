@@ -439,7 +439,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     </div>
 
     <!-- Tab panels -->
-    <div id="ct-dashboard" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column">
+    <div id="ct-dashboard" style="display:flex;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="display:flex;gap:10px;margin-bottom:20px;padding-top:4px">
           <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athletes</div></div>
@@ -455,7 +455,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       </div>
     </div>
 
-    <div id="ct-codes" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column">
+    <div id="ct-codes" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
         <h2 style="margin-bottom:4px">Codes acces eleves</h2>
@@ -497,7 +497,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       </div>
     </div>
 
-    <div id="ct-monetisation" style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;flex-direction:column">
+    <div id="ct-monetisation" style="display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
         <h2 style="margin-bottom:4px">Monetisation</h2>
@@ -3573,22 +3573,26 @@ document.addEventListener('DOMContentLoaded',initLogos);
 // MONETISATION — Coach tabs
 // ═══════════════════════════════════════════════════
 function coachTab(tab){
-  ['dashboard','codes','monetisation'].forEach(t=>{
-    // Panel visibility
-    const p=document.getElementById('ct-'+t);
-    if(p){p.style.cssText=p.style.cssText.replace(/display:[^;]+;?/g,'');p.style.display=t===tab?'flex':'none';}
-    // Top tab bar button
-    const b=document.getElementById('ct-tab-'+t);
-    if(b){b.style.borderBottom=t===tab?'2px solid var(--red)':'2px solid transparent';b.style.color=t===tab?'#fff':'var(--sub)';}
-    // Sidebar button
-    const s=document.getElementById('sb-tab-'+t);
-    if(s){s.style.background=t===tab?'rgba(198,15,8,.15)':'none';s.style.color=t===tab?'#fff':'var(--sub)';s.style.borderLeft=t===tab?'3px solid var(--red)':'3px solid transparent';}
-  });
-  if(tab==='codes'){try{loadStudentCodes();}catch(e){console.warn('loadStudentCodes:',e);}}
-  if(tab==='monetisation'){try{loadMonetisationTab();}catch(e){console.warn('loadMonetisationTab:',e);}}
+  // Show/hide panels
+  var panels={dashboard:'ct-dashboard',codes:'ct-codes',monetisation:'ct-monetisation'};
+  for(var k in panels){
+    var el=document.getElementById(panels[k]);
+    if(el) el.style.display=(k===tab)?'flex':'none';
+  }
+  // Update tab bar buttons
+  var tabBtns={dashboard:'ct-tab-dashboard',codes:'ct-tab-codes',monetisation:'ct-tab-monetisation'};
+  for(var k in tabBtns){
+    var b=document.getElementById(tabBtns[k]);
+    if(b){
+      b.style.borderBottom=(k===tab)?'2px solid #C60F08':'2px solid transparent';
+      b.style.color=(k===tab)?'#fff':'#666';
+    }
+  }
+  // Load content
+  if(tab==='codes'){try{loadStudentCodes();}catch(e){}}
+  if(tab==='monetisation'){try{loadMonetisationTab();}catch(e){}}
 }
 
-// ── Coach: load PayPal settings into inputs ──
 function loadMonetisationTab(){
   const u=currentUser;
   const cidEl=document.getElementById('pp-client-id');if(cidEl&&u.paypalClientId) cidEl.value=u.paypalClientId;

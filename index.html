@@ -178,6 +178,8 @@ select.set-input{width:auto!important;min-width:60px;font-size:11px;padding:5px 
 .program-table{width:100%;border-collapse:collapse;font-size:12px}
 .program-table th{background:var(--red);color:#fff;padding:8px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
 .program-table td{padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:middle}
+@keyframes fadeInScale{from{opacity:0;transform:scale(0.3)}to{opacity:1;transform:scale(1)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeInFast{from{opacity:0}to{opacity:1}}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
@@ -189,9 +191,7 @@ input[type=file]{display:none}
 .done-anim{text-align:center;padding:48px 20px}
 .done-anim .done-icon{font-size:72px;margin-bottom:16px;animation:pulse 2s infinite}
 
-/* ═══ COACH TABS - CLASSES ABSOLUES ═══ */
-.coach-panel{display:none!important;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column}
-.coach-panel.active{display:flex!important}
+/* ═══ COACH TABS ═══ */
 #coach-tabs-bar{display:flex!important;flex-shrink:0;position:relative;z-index:10}
 #coach-tabs-bar button{cursor:pointer!important;pointer-events:auto!important;position:relative;z-index:10}
 #s-coach-home{height:100vh!important;overflow:hidden!important;display:flex;flex-direction:column}
@@ -206,42 +206,56 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 <body>
 
 <!-- SPLASH -->
-<div id="s-splash" class="screen active brand-bg" style="align-items:center;justify-content:center;position:relative;overflow:hidden">
-  <!-- Top red stripe -->
-  <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--red);z-index:2"></div>
-  <!-- Bottom red stripe -->
-  <div style="position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--red);z-index:2"></div>
-  <!-- Radial red glow behind logo -->
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(198,15,8,.18) 0%,transparent 70%);pointer-events:none"></div>
+<div id="s-splash" class="screen active" style="align-items:center;justify-content:center;position:relative;overflow:hidden;background:#000000">
   <!-- Content -->
-  <div style="text-align:center;animation:fadeIn 1.2s ease;z-index:1;padding:0 24px">
-    <div style="width:200px;height:200px;border-radius:36px;background:linear-gradient(145deg,#0f0000,#050000);border:6px solid #C60F08;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 32px;box-shadow:0 0 60px rgba(198,15,8,.5),0 0 120px rgba(198,15,8,.2),inset 0 0 30px rgba(0,0,0,.5)">
-      <div style="font-size:82px;font-weight:900;font-family:Impact,Arial Black,sans-serif;color:#C60F08;letter-spacing:-5px;line-height:1;text-shadow:0 4px 20px rgba(198,15,8,.6)">RC</div>
-      <div style="font-size:10px;letter-spacing:4px;color:#fff;font-weight:700;margin-top:6px;opacity:0.8">REPCORE</div>
-    </div>
-    <div style="font-size:9px;letter-spacing:7px;text-transform:uppercase;color:#444;font-weight:700;margin-bottom:8px">GUELLEC.COACHING PRO</div>
-    <div style="width:40px;height:1px;background:var(--red);margin:0 auto 8px"></div>
-    <div style="font-size:9px;letter-spacing:4px;text-transform:uppercase;color:#333;font-weight:700">DISCIPLINE · TRAVAIL · RÉSULTATS</div>
+  <div style="text-align:center;z-index:1;display:flex;flex-direction:column;align-items:center">
+    <img src="./icons/icon-512x512.png" style="width:180px;height:180px;border-radius:32px;animation:fadeInScale 0.8s ease-out both" alt="RepCore">
+    <div style="font-size:28px;font-family:Impact,'Arial Black',sans-serif;color:#ffffff;letter-spacing:8px;margin-top:24px;animation:fadeInUp 0.6s ease-out 0.6s both">REPCORE</div>
+    <div style="font-size:10px;color:#C60F08;letter-spacing:6px;font-weight:700;margin-top:8px;text-transform:uppercase;animation:fadeInUp 0.6s ease-out 0.9s both">COACHING PREMIUM</div>
   </div>
-  
 </div>
 
 <!-- WELCOME -->
-<div id="s-welcome" class="screen" style="background:#080808;position:relative;overflow:hidden">
-  <!-- Hero top: main logo + coach photo deco -->
-  <div style="flex:0 0 58%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#0a0000 0%,#080000 60%,#080808 100%)">
+<div id="s-welcome" class="screen" style="background:#060606;flex-direction:column;height:100vh">
+  <!-- Top section -->
+  <div style="flex:0 0 60%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(180deg,#0a0000 0%,#050000 50%,#080808 100%)">
     <!-- diagonal brand stripes -->
-    <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(198,15,8,.035) 18px,rgba(198,15,8,.035) 19px);pointer-events:none"></div>
+    <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(198,15,8,.028) 18px,rgba(198,15,8,.028) 19px);pointer-events:none"></div>
     <!-- Red glow -->
-    <div style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(198,15,8,.22) 0%,transparent 65%);pointer-events:none"></div>
-    <!-- Top labels -->
-    <div style="position:absolute;top:20px;left:20px;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:#333;font-weight:700">KEVIN GUELLEC</div>
-    <div style="position:absolute;top:20px;right:20px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#C60F0888;font-weight:700">COACH DIPLÔMÉ D'ÉTAT</div>
-    <!-- Main logo -->
-    <div id="welcome-logo-div" style="width:172px;height:172px;border-radius:32px;background:linear-gradient(145deg,#0f0000,#050000);border:5px solid #C60F08;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;margin-bottom:20px;box-shadow:0 0 50px rgba(198,15,8,.5),0 0 100px rgba(198,15,8,.2)">
-      <div style="font-size:74px;font-weight:900;font-family:Impact,Arial Black,sans-serif;color:#C60F08;letter-spacing:-4px;line-height:1;text-shadow:0 3px 16px rgba(198,15,8,.7)">RC</div>
-      <div style="font-size:9px;letter-spacing:4px;color:#fff;font-weight:700;margin-top:4px;opacity:0.7">REPCORE</div>
+    <div style="position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(198,15,8,.18) 0%,transparent 65%);pointer-events:none"></div>
+    <!-- App icon -->
+    <img src="./icons/icon-512x512.png" style="width:160px;height:160px;border-radius:24px;box-shadow:0 0 40px rgba(198,15,8,.5),0 0 80px rgba(198,15,8,.2);z-index:1;margin-bottom:20px" alt="RepCore">
+    <!-- Brand name -->
+    <div style="z-index:1;text-align:center;margin-bottom:16px">
+      <div style="font-size:12px;letter-spacing:4px;color:#C60F08;font-weight:800;text-transform:uppercase;margin-bottom:6px">GUELLEC.COACHING PRO</div>
+      <div style="font-size:10px;letter-spacing:3px;color:#444;font-weight:700;text-transform:uppercase">DISCIPLINE · TRAVAIL · RÉSULTATS</div>
     </div>
+    <!-- Coach photo bottom -->
+    <div style="position:absolute;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2">
+      <div style="width:60px;height:60px;border-radius:50%;border:2px solid #C60F08;box-shadow:0 0 16px rgba(198,15,8,.4);overflow:hidden;flex-shrink:0">
+        <img id="welcome-photo" style="width:100%;height:100%;object-fit:cover;display:block" alt="">
+      </div>
+      <div id="welcome-coach-name" style="font-size:9px;color:#888;letter-spacing:1px;text-align:center"></div>
+    </div>
+    <!-- Bottom fade -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(180deg,transparent,#080808)"></div>
+  </div>
+
+  <!-- Bottom section -->
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;background:#080808">
+    <div style="font-size:9px;letter-spacing:3px;color:#C60F08;font-weight:800;text-transform:uppercase;margin-bottom:24px;text-align:center">BIENVENUE SUR REPCORE</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:auto">
+      <button class="btn btn-red" onclick="go('s-login')" style="letter-spacing:2px">
+        🏋️ ESPACE COACH
+      </button>
+      <button class="btn btn-outline" onclick="go('s-athlete-entry')" style="letter-spacing:2px">
+        💪 ESPACE ATHLÈTE / CODE
+      </button>
+    </div>
+    <div style="margin-top:32px;text-align:center">
+      <div style="font-size:9px;letter-spacing:2px;color:#2a2a2a;text-transform:uppercase;font-weight:600">Kevin Guellec · Coach Diplômé d’État</div>
+    </div>
+  </div>
     <!-- Brand name -->
     <div style="z-index:1;text-align:center">
       <div style="font-size:8px;letter-spacing:6px;color:var(--red);font-weight:800;text-transform:uppercase;margin-bottom:4px">GUELLEC.COACHING PRO</div>
@@ -444,7 +458,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     </div>
 
     <!-- Tab panels -->
-    <div id="ct-dashboard" class="coach-panel active" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
+    <div id="ct-dashboard" style="display:flex;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="display:flex;gap:10px;margin-bottom:20px;padding-top:4px">
           <div class="metric-box"><div class="metric-val" id="ch-total">0</div><div class="metric-label">Athletes</div></div>
@@ -460,7 +474,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       </div>
     </div>
 
-    <div id="ct-codes" class="coach-panel" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
+    <div id="ct-codes" style="display:none;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
         <h2 style="margin-bottom:4px">Codes acces eleves</h2>
@@ -502,7 +516,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       </div>
     </div>
 
-    <div id="ct-monetisation" class="coach-panel" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
+    <div id="ct-monetisation" style="display:none;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;flex-direction:column">
       <div class="pad">
         <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
         <h2 style="margin-bottom:4px">Monetisation</h2>
@@ -1162,7 +1176,7 @@ window.onload=()=>{
     const sess=DB.get('session');
     if(sess){currentUser=sess;routeUser();}
     else go('s-welcome');
-  },1600);
+  },2500);
 };
 function routeUser(){
   if(!currentUser) return go('s-welcome');
@@ -3578,12 +3592,14 @@ document.addEventListener('DOMContentLoaded',initLogos);
 // MONETISATION — Coach tabs
 // ═══════════════════════════════════════════════════
 function coachTab(tab){
-  // Use CSS classes - impossible to override
   ['dashboard','codes','monetisation'].forEach(function(id){
     var p=document.getElementById('ct-'+id);
     if(p){
-      p.classList.remove('active');
-      if(id===tab) p.classList.add('active');
+      if(id===tab){
+        p.style.setProperty('display','flex','important');
+      } else {
+        p.style.setProperty('display','none','important');
+      }
     }
     var b=document.getElementById('ct-tab-'+id);
     if(b){
@@ -3591,8 +3607,8 @@ function coachTab(tab){
       b.style.color=(id===tab)?'#fff':'#555';
     }
   });
-  if(tab==='codes')try{loadStudentCodes();}catch(e){console.error('codes:',e);}
-  if(tab==='monetisation')try{loadMonetisationTab();}catch(e){console.error('monet:',e);}
+  if(tab==='codes')try{loadStudentCodes();}catch(e){console.error(e);}
+  if(tab==='monetisation')try{loadMonetisationTab();}catch(e){console.error(e);}
 }
 
 function loadMonetisationTab(){

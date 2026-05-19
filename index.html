@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192x192.png">
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}</script>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Metal+Mania&family=New+Rocker&family=Barlow+Condensed:wght@700;800;900&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=New+Rocker&family=Pirata+One&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 html{background:#030303}*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#080808;--red:#E02020;--red2:#b81515;--red-bg:#0d0000;--dark:#0f0f0f;--card:#111;--card2:#181818;--border:#1e1e1e;--sub:#5a5a5a;--text:#efefef;--green:#22c55e;--orange:#f97316}
@@ -203,7 +203,7 @@ input[type=file]{display:none}
 #ch-main-area{display:flex!important;flex-direction:column!important;flex:1!important;min-height:0!important;overflow:hidden!important}
 
 /* ====== METAL MANIA — TITRES PRINCIPAUX ====== */
-h1,h2,.topbar-title{font-family:'Metal Mania','Anton',Impact,'Arial Black',sans-serif!important;letter-spacing:1px}
+h1,h2,.topbar-title{font-family:'New Rocker','Anton',Impact,'Arial Black',sans-serif!important;letter-spacing:1px}
 h3,.metric-val{font-family:'Anton',Impact,'Arial Black',sans-serif!important;letter-spacing:0.5px}
 h1{font-size:26px;text-transform:uppercase}
 h2{font-size:20px;text-transform:uppercase}
@@ -330,9 +330,9 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 
   <!-- RC Logo avec effet foudre -->
   <div style="text-align:center;z-index:3;position:relative">
-    <div style="font-size:104px;font-family:'Metal Mania','Anton',Impact,sans-serif;color:#fff;letter-spacing:4px;line-height:1;animation:rcStrike 2s cubic-bezier(.16,1,.3,1) 0.3s both;opacity:0">RC</div>
+    <div style="font-size:104px;font-family:'New Rocker','Anton',Impact,sans-serif;color:#fff;letter-spacing:4px;line-height:1;animation:rcStrike 2s cubic-bezier(.16,1,.3,1) 0.3s both;opacity:0">RC</div>
     <div style="width:56px;height:2px;background:#E02020;margin:16px auto 0;animation:splashLineIn 0.5s ease 1.2s both;opacity:0;box-shadow:0 0 12px #E02020"></div>
-    <div style="font-size:9px;letter-spacing:9px;color:#E02020;font-family:'Metal Mania',Anton,sans-serif;text-transform:uppercase;margin-top:14px;animation:splashTextIn 0.5s ease 1.4s both;opacity:0">REPCORE</div>
+    <div style="font-size:9px;letter-spacing:9px;color:#E02020;font-family:'New Rocker',Anton,sans-serif;text-transform:uppercase;margin-top:14px;animation:splashTextIn 0.5s ease 1.4s both;opacity:0">REPCORE</div>
     <div style="font-size:7px;letter-spacing:4px;color:#333;font-weight:600;text-transform:uppercase;margin-top:7px;animation:splashTextIn 0.5s ease 1.6s both;opacity:0">COACHING PROFESSIONNEL</div>
   </div>
 
@@ -352,7 +352,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <!-- TOP: Logo zone -->
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;padding-top:60px">
     <!-- RC wordmark -->
-    <div style="font-size:88px;font-weight:900;font-family:'Metal Mania','Anton',Impact,sans-serif;color:#fff;letter-spacing:6px;line-height:1;animation:wFadeUp 0.8s cubic-bezier(.16,1,.3,1) 0.1s both">RC</div>
+    <div style="font-size:88px;font-weight:900;font-family:'New Rocker','Anton',Impact,sans-serif;color:#fff;letter-spacing:6px;line-height:1;animation:wFadeUp 0.8s cubic-bezier(.16,1,.3,1) 0.1s both">RC</div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:12px;animation:wFadeUp 0.6s ease 0.35s both;opacity:0">
       <div style="width:24px;height:1px;background:#333"></div>
       <div style="font-size:8px;letter-spacing:7px;color:#E02020;font-weight:700">REPCORE</div>
@@ -372,8 +372,8 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 
   <!-- BOTTOM: CTA buttons -->
   <div style="padding:32px 28px 48px;z-index:1;animation:wSlideUp 0.7s cubic-bezier(.16,1,.3,1) 0.55s both;opacity:0">
-    <button onclick="go('s-login')" style="width:100%;padding:20px;background:#E02020;color:#fff;border:none;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:4px;cursor:pointer;text-transform:uppercase;margin-bottom:12px;transition:.15s;font-family:'Metal Mania','Anton',sans-serif" onmouseover="this.style.background='#c91a1a'" onmouseout="this.style.background='#E02020'">ESPACE COACH</button>
-    <button onclick="go('s-athlete-entry')" style="width:100%;padding:20px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.15);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:4px;cursor:pointer;text-transform:uppercase;transition:.15s;font-family:'Metal Mania','Anton',sans-serif" onmouseover="this.style.borderColor='rgba(224,32,32,.6)';this.style.color='#E02020'" onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='#fff'">ESPACE ATHLETE</button>
+    <button onclick="go('s-login')" style="width:100%;padding:20px;background:#E02020;color:#fff;border:none;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:4px;cursor:pointer;text-transform:uppercase;margin-bottom:12px;transition:.15s;font-family:'New Rocker','Anton',sans-serif" onmouseover="this.style.background='#c91a1a'" onmouseout="this.style.background='#E02020'">ESPACE COACH</button>
+    <button onclick="go('s-athlete-entry')" style="width:100%;padding:20px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.15);font-family:'Montserrat',sans-serif;font-size:13px;font-weight:800;letter-spacing:4px;cursor:pointer;text-transform:uppercase;transition:.15s;font-family:'New Rocker','Anton',sans-serif" onmouseover="this.style.borderColor='rgba(224,32,32,.6)';this.style.color='#E02020'" onmouseout="this.style.borderColor='rgba(255,255,255,.15)';this.style.color='#fff'">ESPACE ATHLETE</button>
     <div style="margin-top:28px;text-align:center">
       <div style="font-size:9px;letter-spacing:2px;color:#222;font-weight:600;text-transform:uppercase">Kevin Guellec &nbsp;·&nbsp; Coach Diplômé d'État</div>
     </div>
@@ -523,7 +523,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     <div id="ch-mobile-header" style="background:#090909;border-bottom:1px solid var(--red);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <span style="font-size:14px;font-family:'Metal Mania','Anton',Impact,sans-serif;color:var(--red);letter-spacing:3px">RC</span>
+          <span style="font-size:14px;font-family:'New Rocker','Anton',Impact,sans-serif;color:var(--red);letter-spacing:3px">RC</span>
         </div>
         <div>
           <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">COACH</div>
@@ -834,7 +834,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <div style="background:#090909;border-bottom:1px solid var(--red);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:36px;height:36px;background:var(--red-bg);border:1px solid var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <span style="font-size:14px;font-family:'Metal Mania','Anton',Impact,sans-serif;color:var(--red);letter-spacing:3px">RC</span>
+        <span style="font-size:14px;font-family:'New Rocker','Anton',Impact,sans-serif;color:var(--red);letter-spacing:3px">RC</span>
       </div>
       <div>
         <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">ATHLETE</div>

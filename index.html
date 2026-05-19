@@ -401,7 +401,10 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       <p style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:12px">Génère un lien d'invitation à envoyer par WhatsApp ou SMS. L'athlète le colle dans le champ code.</p>
       <button class="btn btn-outline" style="font-size:11px;letter-spacing:1px" onclick="copyCoachInviteLink()">📋 Copier le lien d'invitation</button>
     </div>
-    <button class="btn btn-red" style="margin-top:20px" onclick="go('<div id="s-coach-home" class="screen" style="flex-direction:column;height:100vh;overflow:hidden">
+    <button class="btn btn-red" style="margin-top:20px" onclick="go('s-coach-home');loadCoachHome()">Espace Coach &rarr;</button>
+  </div>
+</div>
+<div id="s-coach-home" class="screen" style="flex-direction:column;height:100vh;overflow:hidden">
 
   <!-- SIDEBAR (desktop only) -->
   <div id="ch-sidebar" style="display:none;flex-direction:column;background:#040404;border-right:1px solid #1a0000">
@@ -1156,6 +1159,77 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 <!-- TOAST -->
 <div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:#222;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;transition:.3s;opacity:0;min-width:200px;text-align:center;pointer-events:none"></div>
 
+
+<!-- ══════ ACCESS GATE ══════ -->
+<div id="s-access-gate" class="screen" style="background:#060606;justify-content:center;padding:32px 24px;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(198,15,8,.025) 18px,rgba(198,15,8,.025) 19px);pointer-events:none"></div>
+  <div class="anim-in" style="text-align:center;z-index:1;width:100%">
+    <div style="font-size:56px;margin-bottom:16px">🔒</div>
+    <h1 style="margin-bottom:8px" id="ag-title">Accès expiré</h1>
+    <p class="sub" style="line-height:1.6;margin-bottom:32px" id="ag-sub">Ton accès à RepCore n'est plus actif.</p>
+    <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:24px;text-align:left">
+      <div id="ag-status-block"></div>
+    </div>
+    <div class="gap">
+      <button class="btn btn-red" onclick="go('s-subscribe');loadSubscribePage()">🔑 Renouveler mon accès</button>
+      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer un nouveau code</button>
+    </div>
+    <button onclick="logout()" style="margin-top:24px;background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;font-family:Montserrat,sans-serif">Se déconnecter</button>
+  </div>
+</div>
+
+<!-- ══════ SUBSCRIBE ══════ -->
+<div id="s-subscribe" class="screen" style="background:#060606;overflow:hidden">
+  <div class="topbar" style="border-bottom:1px solid #1a0000">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <span class="topbar-title">Accès RepCore</span>
+    <span></span>
+  </div>
+  <div class="scroll-area pad">
+
+    <!-- Option 1: Code coach -->
+    <div style="border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">🎯</div>
+        <div>
+          <div style="font-weight:800;font-size:15px">Coaching avec suivi</div>
+          <div style="font-size:11px;color:var(--sub)">Code fourni par ton coach</div>
+        </div>
+      </div>
+      <p class="sub" style="font-size:12px;line-height:1.6;margin-bottom:14px">Tu as reçu un code d'accès de ton coach. Entre-le ici pour débloquer l'app avec ton suivi personnalisé.</p>
+      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer mon code coach</button>
+    </div>
+
+    <!-- Option 2: Autonomie -->
+    <div style="border:2px solid var(--red);border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000;position:relative;overflow:hidden">
+      <div style="position:absolute;top:12px;right:12px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:1px">POPULAIRE</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">💪</div>
+        <div>
+          <div style="font-weight:800;font-size:15px">Coaching en autonomie</div>
+          <div style="font-size:11px;color:var(--red);font-weight:700">9,99 € / mois</div>
+        </div>
+      </div>
+      <ul style="font-size:12px;color:#aaa;line-height:1.9;margin-bottom:16px;padding-left:0;list-style:none">
+        <li>✅ Accès complet à l'application</li>
+        <li>✅ Programmes d'entraînement</li>
+        <li>✅ Suivi nutrition & bilans</li>
+        <li>✅ Vidéos techniques</li>
+        <li>✅ Sans engagement — annulation facile</li>
+      </ul>
+      <div style="width:36px;height:2px;background:var(--red);margin-bottom:16px"></div>
+      <div id="paypal-btn-container" style="min-height:48px">
+        <button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99€/mois →</button>
+      </div>
+      <p style="font-size:10px;color:#555;margin-top:10px;text-align:center">Paiement sécurisé via PayPal · Sans engagement</p>
+    </div>
+
+    <p class="sub" style="font-size:11px;text-align:center;line-height:1.6">Tu as déjà acheté un programme ? Inscris-toi ici pour accéder à toutes les fonctionnalités de coaching en autonomie.</p>
+  </div>
+</div>
+
+</body></html>
+
 <script>
 
 // LOGO_BADGE -> head
@@ -1746,76 +1820,7 @@ function openHomePdf(){
   if(badge) badge.style.display='none';
   if(freshU.programPdf){
     const w=window.open();
-    if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${freshU.programPdf}" style="width:100%;height:100vh;border:none"></iframe>
-<!-- ══════ ACCESS GATE ══════ -->
-<div id="s-access-gate" class="screen" style="background:#060606;justify-content:center;padding:32px 24px;position:relative;overflow:hidden">
-  <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(-55deg,transparent,transparent 18px,rgba(198,15,8,.025) 18px,rgba(198,15,8,.025) 19px);pointer-events:none"></div>
-  <div class="anim-in" style="text-align:center;z-index:1;width:100%">
-    <div style="font-size:56px;margin-bottom:16px">🔒</div>
-    <h1 style="margin-bottom:8px" id="ag-title">Accès expiré</h1>
-    <p class="sub" style="line-height:1.6;margin-bottom:32px" id="ag-sub">Ton accès à RepCore n'est plus actif.</p>
-    <div style="background:#0f0f0f;border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:24px;text-align:left">
-      <div id="ag-status-block"></div>
-    </div>
-    <div class="gap">
-      <button class="btn btn-red" onclick="go('s-subscribe');loadSubscribePage()">🔑 Renouveler mon accès</button>
-      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer un nouveau code</button>
-    </div>
-    <button onclick="logout()" style="margin-top:24px;background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;font-family:Montserrat,sans-serif">Se déconnecter</button>
-  </div>
-</div>
-
-<!-- ══════ SUBSCRIBE ══════ -->
-<div id="s-subscribe" class="screen" style="background:#060606;overflow:hidden">
-  <div class="topbar" style="border-bottom:1px solid #1a0000">
-    <button class="back-btn" onclick="history.back()">←</button>
-    <span class="topbar-title">Accès RepCore</span>
-    <span></span>
-  </div>
-  <div class="scroll-area pad">
-
-    <!-- Option 1: Code coach -->
-    <div style="border:1px solid #2a0000;border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">🎯</div>
-        <div>
-          <div style="font-weight:800;font-size:15px">Coaching avec suivi</div>
-          <div style="font-size:11px;color:var(--sub)">Code fourni par ton coach</div>
-        </div>
-      </div>
-      <p class="sub" style="font-size:12px;line-height:1.6;margin-bottom:14px">Tu as reçu un code d'accès de ton coach. Entre-le ici pour débloquer l'app avec ton suivi personnalisé.</p>
-      <button class="btn btn-outline" onclick="go('s-client-code')">Entrer mon code coach</button>
-    </div>
-
-    <!-- Option 2: Autonomie -->
-    <div style="border:2px solid var(--red);border-radius:16px;padding:20px;margin-bottom:16px;background:#0a0000;position:relative;overflow:hidden">
-      <div style="position:absolute;top:12px;right:12px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;letter-spacing:1px">POPULAIRE</div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px">💪</div>
-        <div>
-          <div style="font-weight:800;font-size:15px">Coaching en autonomie</div>
-          <div style="font-size:11px;color:var(--red);font-weight:700">9,99 € / mois</div>
-        </div>
-      </div>
-      <ul style="font-size:12px;color:#aaa;line-height:1.9;margin-bottom:16px;padding-left:0;list-style:none">
-        <li>✅ Accès complet à l'application</li>
-        <li>✅ Programmes d'entraînement</li>
-        <li>✅ Suivi nutrition & bilans</li>
-        <li>✅ Vidéos techniques</li>
-        <li>✅ Sans engagement — annulation facile</li>
-      </ul>
-      <div style="width:36px;height:2px;background:var(--red);margin-bottom:16px"></div>
-      <div id="paypal-btn-container" style="min-height:48px">
-        <button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99€/mois →</button>
-      </div>
-      <p style="font-size:10px;color:#555;margin-top:10px;text-align:center">Paiement sécurisé via PayPal · Sans engagement</p>
-    </div>
-
-    <p class="sub" style="font-size:11px;text-align:center;line-height:1.6">Tu as déjà acheté un programme ? Inscris-toi ici pour accéder à toutes les fonctionnalités de coaching en autonomie.</p>
-  </div>
-</div>
-
-</body></html>`);w.document.close();}
+    if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${freshU.programPdf}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);w.document.close();}
   } else if(freshU.programPdfLink){
     window.open(freshU.programPdfLink,'_blank');
   }

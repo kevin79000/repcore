@@ -357,8 +357,59 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 
   <!-- RC Logo avec effet foudre — PNG transparent, pas de mix-blend-mode -->
   <div style="text-align:center;z-index:3;position:relative">
-    <div style="animation:rcStrike 0.9s cubic-bezier(.2,0,.4,1) 0.15s both;opacity:0">
-      <img src="./icons/logo.png" style="display:block;width:220px;height:220px">
+    <div style="animation:rcStrike 0.9s cubic-bezier(.2,0,.4,1) 0.15s both;opacity:0;display:inline-block">
+      <svg width="260" height="210" viewBox="0 0 260 210" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c0c0c0"/>
+      <stop offset="40%" stop-color="#707070"/>
+      <stop offset="100%" stop-color="#383838"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#909090"/>
+      <stop offset="50%" stop-color="#484848"/>
+      <stop offset="100%" stop-color="#383838"/>
+    </linearGradient>
+    <linearGradient id="kg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#707070"/>
+      <stop offset="50%" stop-color="#383838"/>
+      <stop offset="100%" stop-color="#585858"/>
+    </linearGradient>
+  </defs>
+  <!-- REPCORE -->
+  <text x="130" y="50" font-family="Impact,Arial Narrow,sans-serif" font-size="54" fill="white" text-anchor="middle" letter-spacing="4">REPCORE</text>
+  <!-- COACHING PREMIUM -->
+  <text x="130" y="68" font-family="Arial,sans-serif" font-size="9" fill="#999" text-anchor="middle" letter-spacing="7" font-weight="700">COACHING PREMIUM</text>
+  <!-- Separator -->
+  <line x1="55" y1="78" x2="205" y2="78" stroke="#E02020" stroke-width="1.5"/>
+  <!-- Dumbbell -->
+  <!-- Left outer plate -->
+  <rect x="4" y="100" width="30" height="76" rx="5" fill="url(#pg)"/>
+  <rect x="7" y="100" width="5" height="76" rx="2" fill="rgba(255,255,255,0.15)"/>
+  <rect x="4" y="116" width="30" height="4" fill="#B01010"/>
+  <rect x="4" y="156" width="30" height="4" fill="#B01010"/>
+  <!-- Left collar -->
+  <rect x="34" y="114" width="13" height="48" rx="3" fill="#606060"/>
+  <!-- Left bar -->
+  <rect x="47" y="126" width="50" height="24" fill="url(#bg)"/>
+  <!-- Knurl -->
+  <rect x="97" y="122" width="66" height="32" rx="4" fill="url(#kg)"/>
+  <line x1="109" y1="122" x2="109" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="121" y1="122" x2="121" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="133" y1="122" x2="133" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="145" y1="122" x2="145" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="151" y1="122" x2="151" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <rect x="127" y="122" width="6" height="32" fill="#E02020" opacity="0.7"/>
+  <!-- Right bar -->
+  <rect x="163" y="126" width="50" height="24" fill="url(#bg)"/>
+  <!-- Right collar -->
+  <rect x="213" y="114" width="13" height="48" rx="3" fill="#606060"/>
+  <!-- Right outer plate -->
+  <rect x="226" y="100" width="30" height="76" rx="5" fill="url(#pg)"/>
+  <rect x="249" y="100" width="5" height="76" rx="2" fill="rgba(255,255,255,0.15)"/>
+  <rect x="226" y="116" width="30" height="4" fill="#B01010"/>
+  <rect x="226" y="156" width="30" height="4" fill="#B01010"/>
+</svg>
     </div>
   </div>
 
@@ -378,8 +429,59 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <!-- TOP: Logo zone -->
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;padding-top:60px">
     <!-- RC wordmark -->
-    <div style="animation:wFadeUp 0.8s cubic-bezier(.16,1,.3,1) 0.1s both">
-      <img src="./icons/logo.png" style="display:block;width:200px;height:200px">
+    <div style="animation:wFadeUp 0.8s cubic-bezier(.16,1,.3,1) 0.1s both;display:inline-block">
+      <svg width="260" height="210" viewBox="0 0 260 210" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c0c0c0"/>
+      <stop offset="40%" stop-color="#707070"/>
+      <stop offset="100%" stop-color="#383838"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#909090"/>
+      <stop offset="50%" stop-color="#484848"/>
+      <stop offset="100%" stop-color="#383838"/>
+    </linearGradient>
+    <linearGradient id="kg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#707070"/>
+      <stop offset="50%" stop-color="#383838"/>
+      <stop offset="100%" stop-color="#585858"/>
+    </linearGradient>
+  </defs>
+  <!-- REPCORE -->
+  <text x="130" y="50" font-family="Impact,Arial Narrow,sans-serif" font-size="54" fill="white" text-anchor="middle" letter-spacing="4">REPCORE</text>
+  <!-- COACHING PREMIUM -->
+  <text x="130" y="68" font-family="Arial,sans-serif" font-size="9" fill="#999" text-anchor="middle" letter-spacing="7" font-weight="700">COACHING PREMIUM</text>
+  <!-- Separator -->
+  <line x1="55" y1="78" x2="205" y2="78" stroke="#E02020" stroke-width="1.5"/>
+  <!-- Dumbbell -->
+  <!-- Left outer plate -->
+  <rect x="4" y="100" width="30" height="76" rx="5" fill="url(#pg)"/>
+  <rect x="7" y="100" width="5" height="76" rx="2" fill="rgba(255,255,255,0.15)"/>
+  <rect x="4" y="116" width="30" height="4" fill="#B01010"/>
+  <rect x="4" y="156" width="30" height="4" fill="#B01010"/>
+  <!-- Left collar -->
+  <rect x="34" y="114" width="13" height="48" rx="3" fill="#606060"/>
+  <!-- Left bar -->
+  <rect x="47" y="126" width="50" height="24" fill="url(#bg)"/>
+  <!-- Knurl -->
+  <rect x="97" y="122" width="66" height="32" rx="4" fill="url(#kg)"/>
+  <line x1="109" y1="122" x2="109" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="121" y1="122" x2="121" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="133" y1="122" x2="133" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="145" y1="122" x2="145" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <line x1="151" y1="122" x2="151" y2="154" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <rect x="127" y="122" width="6" height="32" fill="#E02020" opacity="0.7"/>
+  <!-- Right bar -->
+  <rect x="163" y="126" width="50" height="24" fill="url(#bg)"/>
+  <!-- Right collar -->
+  <rect x="213" y="114" width="13" height="48" rx="3" fill="#606060"/>
+  <!-- Right outer plate -->
+  <rect x="226" y="100" width="30" height="76" rx="5" fill="url(#pg)"/>
+  <rect x="249" y="100" width="5" height="76" rx="2" fill="rgba(255,255,255,0.15)"/>
+  <rect x="226" y="116" width="30" height="4" fill="#B01010"/>
+  <rect x="226" y="156" width="30" height="4" fill="#B01010"/>
+</svg>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:12px;animation:wFadeUp 0.6s ease 0.35s both;opacity:0">
       <div style="width:24px;height:1px;background:#333"></div>
@@ -413,7 +515,29 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <div class="topbar" style="border-bottom:1px solid var(--border)">
     <button class="back-btn" onclick="go('s-welcome')">←</button>
     <div style="height:32px;display:flex;align-items:center;gap:6px">
-      <img src="./icons/logo.png" style="display:block;width:52px;height:52px;margin:-8px 0">
+      <svg width="130" height="32" viewBox="0 0 130 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tpg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b0b0b0"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+  <!-- Dumbbell mini -->
+  <rect x="1" y="8" width="10" height="16" rx="2" fill="url(#tpg)"/>
+  <rect x="1" y="12" width="10" height="2" fill="#B01010"/>
+  <rect x="1" y="18" width="10" height="2" fill="#B01010"/>
+  <rect x="11" y="11" width="5" height="10" rx="1" fill="#666"/>
+  <rect x="16" y="13" width="14" height="6" fill="#666"/>
+  <rect x="30" y="11" width="22" height="10" rx="2" fill="#505050"/>
+  <rect x="38" y="11" width="5" height="10" fill="#E02020" opacity="0.7"/>
+  <rect x="52" y="13" width="14" height="6" fill="#666"/>
+  <rect x="66" y="11" width="5" height="10" rx="1" fill="#666"/>
+  <rect x="71" y="8" width="10" height="16" rx="2" fill="url(#tpg)"/>
+  <rect x="71" y="12" width="10" height="2" fill="#B01010"/>
+  <rect x="71" y="18" width="10" height="2" fill="#B01010"/>
+  <!-- REPCORE text -->
+  <text x="86" y="21" font-family="Impact,sans-serif" font-size="16" fill="white" letter-spacing="1">REPCORE</text>
+</svg>
     </div>
     <span></span>
   </div>
@@ -452,7 +576,29 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 <div id="s-login" class="screen">
   <div class="topbar" style="border-bottom:1px solid var(--border)">
     <button class="back-btn" onclick="go('s-welcome')">←</button>
-    <div style="height:32px;display:flex;align-items:center;gap:6px"><img src="./icons/logo.png" style="display:block;width:52px;height:52px;margin:-8px 0"></div>
+    <div style="height:32px;display:flex;align-items:center;gap:6px"><svg width="130" height="32" viewBox="0 0 130 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tpg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b0b0b0"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+  <!-- Dumbbell mini -->
+  <rect x="1" y="8" width="10" height="16" rx="2" fill="url(#tpg)"/>
+  <rect x="1" y="12" width="10" height="2" fill="#B01010"/>
+  <rect x="1" y="18" width="10" height="2" fill="#B01010"/>
+  <rect x="11" y="11" width="5" height="10" rx="1" fill="#666"/>
+  <rect x="16" y="13" width="14" height="6" fill="#666"/>
+  <rect x="30" y="11" width="22" height="10" rx="2" fill="#505050"/>
+  <rect x="38" y="11" width="5" height="10" fill="#E02020" opacity="0.7"/>
+  <rect x="52" y="13" width="14" height="6" fill="#666"/>
+  <rect x="66" y="11" width="5" height="10" rx="1" fill="#666"/>
+  <rect x="71" y="8" width="10" height="16" rx="2" fill="url(#tpg)"/>
+  <rect x="71" y="12" width="10" height="2" fill="#B01010"/>
+  <rect x="71" y="18" width="10" height="2" fill="#B01010"/>
+  <!-- REPCORE text -->
+  <text x="86" y="21" font-family="Impact,sans-serif" font-size="16" fill="white" letter-spacing="1">REPCORE</text>
+</svg></div>
     <span></span>
   </div>
   <div class="pad scroll-area gap" style="justify-content:center;flex:1">
@@ -516,7 +662,28 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <div id="ch-sidebar" style="display:none;flex-direction:column;background:#040404;border-right:1px solid #1a0000">
     <div style="padding:20px 16px;border-bottom:1px solid #1a0000">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-        <img src="./icons/logo.png" style="display:block;width:56px;height:56px;margin:-10px -4px;flex-shrink:0">
+        <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hpg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b0b0b0"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+  <!-- Mini dumbbell centré -->
+  <rect x="1" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="1" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="1" y="22" width="9" height="2" fill="#B01010"/>
+  <rect x="10" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="14" y="19" width="7" height="6" fill="#666"/>
+  <rect x="21" y="17" width="2" height="10" fill="#E02020" opacity="0.8"/>
+  <rect x="23" y="19" width="7" height="6" fill="#666"/>
+  <rect x="30" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="34" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="34" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="34" y="22" width="9" height="2" fill="#B01010"/>
+  <!-- RC -->
+  <text x="22" y="38" font-family="Impact,sans-serif" font-size="9" fill="#E02020" text-anchor="middle" letter-spacing="2">REPCORE</text>
+</svg>
         <div>
           <div style="font-size:8px;color:var(--red);letter-spacing:2px;font-weight:800">COACH</div>
           <div style="font-size:13px;font-weight:900" id="ch-name-sidebar"></div>
@@ -547,7 +714,28 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     <!-- Mobile header -->
     <div id="ch-mobile-header" style="background:#090909;border-bottom:1px solid var(--red);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div style="display:flex;align-items:center;gap:10px">
-        <img src="./icons/logo.png" style="display:block;width:56px;height:56px;margin:-10px -4px;flex-shrink:0">
+        <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hpg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b0b0b0"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+  <!-- Mini dumbbell centré -->
+  <rect x="1" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="1" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="1" y="22" width="9" height="2" fill="#B01010"/>
+  <rect x="10" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="14" y="19" width="7" height="6" fill="#666"/>
+  <rect x="21" y="17" width="2" height="10" fill="#E02020" opacity="0.8"/>
+  <rect x="23" y="19" width="7" height="6" fill="#666"/>
+  <rect x="30" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="34" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="34" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="34" y="22" width="9" height="2" fill="#B01010"/>
+  <!-- RC -->
+  <text x="22" y="38" font-family="Impact,sans-serif" font-size="9" fill="#E02020" text-anchor="middle" letter-spacing="2">REPCORE</text>
+</svg>
         <div>
           <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">COACH</div>
           <div style="font-size:14px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:1px;line-height:1" id="ch-name"></div>
@@ -856,7 +1044,28 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   <!-- Brand header athlete -->
   <div style="background:#090909;border-bottom:1px solid var(--red);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
     <div style="display:flex;align-items:center;gap:10px">
-      <img src="./icons/logo.png" style="display:block;width:56px;height:56px;margin:-10px -4px;flex-shrink:0">
+      <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hpg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b0b0b0"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+  <!-- Mini dumbbell centré -->
+  <rect x="1" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="1" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="1" y="22" width="9" height="2" fill="#B01010"/>
+  <rect x="10" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="14" y="19" width="7" height="6" fill="#666"/>
+  <rect x="21" y="17" width="2" height="10" fill="#E02020" opacity="0.8"/>
+  <rect x="23" y="19" width="7" height="6" fill="#666"/>
+  <rect x="30" y="17" width="4" height="10" rx="1" fill="#666"/>
+  <rect x="34" y="14" width="9" height="16" rx="2" fill="url(#hpg)"/>
+  <rect x="34" y="18" width="9" height="2" fill="#B01010"/>
+  <rect x="34" y="22" width="9" height="2" fill="#B01010"/>
+  <!-- RC -->
+  <text x="22" y="38" font-family="Impact,sans-serif" font-size="9" fill="#E02020" text-anchor="middle" letter-spacing="2">REPCORE</text>
+</svg>
       <div>
         <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">ATHLETE</div>
         <div style="font-size:14px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:1px;line-height:1" id="clh-name"></div>

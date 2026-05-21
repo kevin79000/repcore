@@ -4,8 +4,8 @@
   "description": "Application de coaching sportif RepCore",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0000",
-  "theme_color": "#C60F08",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "orientation": "portrait",
   "icons": [
     { "src": "icons/icon-72x72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },
@@ -15,6 +15,6 @@
     { "src": "icons/icon-152x152.png", "sizes": "152x152", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-384x384.png", "sizes": "384x384", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

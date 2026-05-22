@@ -571,6 +571,30 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
     <button class="btn btn-red" style="margin-top:20px" onclick="go('s-coach-home');loadCoachHome()">Espace Coach &rarr;</button>
   </div>
 </div>
+<!-- ATHLETE CODE ENTRY (after registration) -->
+<div id="s-client-code" class="screen" style="justify-content:center;padding:32px 24px">
+  <div class="anim-in" style="max-width:400px;width:100%">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:52px;margin-bottom:16px">🔑</div>
+      <h1 style="margin-bottom:8px">Code d'accès</h1>
+      <p class="sub" style="line-height:1.6">Entre le code fourni par ton coach pour activer ton accès personnalisé.</p>
+    </div>
+    <div style="margin-bottom:16px">
+      <input id="cc-code" type="text" placeholder="RCACCESS:... ou GCP-XXXXXX"
+        style="width:100%;padding:14px;background:#111;border:1px solid var(--border);border-radius:12px;color:#fff;font-family:Montserrat,sans-serif;font-size:13px;box-sizing:border-box;letter-spacing:1px"
+        oninput="this.value=this.value.toUpperCase()">
+      <div id="cc-err" class="err" style="display:none;margin-top:8px"></div>
+    </div>
+    <button class="btn btn-red" onclick="doLinkCoach()">Activer mon accès →</button>
+    <div style="margin-top:20px;text-align:center">
+      <button onclick="go('s-subscribe');loadSubscribePage()" style="background:none;border:none;color:var(--sub);font-size:12px;cursor:pointer;font-family:Montserrat,sans-serif">Pas de code coach ? Voir les abonnements →</button>
+    </div>
+    <div style="margin-top:12px;text-align:center">
+      <button onclick="logout()" style="background:none;border:none;color:#2a2a2a;font-size:11px;cursor:pointer;font-family:Montserrat,sans-serif">Se déconnecter</button>
+    </div>
+  </div>
+</div>
+
 <div id="s-coach-home" class="screen" style="flex-direction:column;height:100vh;overflow:hidden">
 
   <!-- SIDEBAR (desktop only) -->
@@ -1418,6 +1442,23 @@ const DB={
   set(k,v){localStorage.setItem('rc_'+k,JSON.stringify(v))},
   del(k){localStorage.removeItem('rc_'+k)},
 };
+// ── Import coach profile embedded in invite URL (?coachpkg=BASE64) ──
+(function importCoachFromURL(){
+  try{
+    const params=new URLSearchParams(window.location.search);
+    const pkg=params.get('coachpkg');
+    if(!pkg) return;
+    const coach=JSON.parse(decodeURIComponent(escape(atob(pkg))));
+    if(!coach.id||coach.role!=='coach'||!coach.email) return;
+    const users=DB.get('users')||{};
+    // Merge: keep existing data (e.g. studentCodes) but update basic profile
+    users[coach.email]=Object.assign(users[coach.email]||{},coach);
+    DB.set('users',users);
+    window._importedCoach=coach;
+    window.history.replaceState({},'',window.location.pathname);
+  }catch(e){}
+})();
+
 let currentUser=null,currentClientId=null;
 let woState={exercises:[],currentEx:0,startTime:null,timerInterval:null,sessionData:{}};
 let qStep=0;
@@ -1438,6 +1479,13 @@ window.onload=()=>{
     setTimeout(()=>{
       const sess=DB.get('session');
       if(sess){currentUser=sess;routeUser();}
+      else if(window._importedCoach){
+        // Athlete arrived via invite link → send straight to athlete entry
+        go('s-athlete-entry');
+        const c=window._importedCoach;
+        setTimeout(()=>toast('👋 Coach '+c.fname+' importé ! Entre son code '+c.code+'.'),400);
+        window._importedCoach=null;
+      }
       else go('s-welcome');
     },500);
   },1600);
@@ -1447,8 +1495,8 @@ function routeUser(){
   if(currentUser.role==='coach'){loadCoachHome();return;}
   // Athlète : vérifier l'accès
   const s=currentUser.status||'FREE';
-  // Si FREE = jamais eu d'accès → pas d'access-gate, retour à l'accueil proprement
-  if(s==='FREE'){silentLogout();return go('s-welcome');}
+  // Si FREE = jamais eu d'accès → montrer l'écran de saisie de code
+  if(s==='FREE'){return go('s-client-code');}
   if(!checkAccess(currentUser)){go('s-access-gate');loadAccessGate();return;}
   loadClientHome();
 }
@@ -1531,7 +1579,16 @@ function doRegister(){
   if(selRole==='coach'){
     document.getElementById('coach-code-val').textContent=user.code;
     go('s-coach-code');
-  } else go('s-client-code');
+  } else {
+    go('s-client-code');
+    // Pre-fill pending code if athlete came via s-athlete-entry
+    const pending=localStorage.getItem('pendingCode');
+    if(pending){
+      const inp=document.getElementById('cc-code');
+      if(inp){inp.value=pending;}
+      localStorage.removeItem('pendingCode');
+    }
+  }
 }
 function doLogin(){
   const em=v('l-email').toLowerCase(),pw=v('l-pwd');
@@ -1562,13 +1619,22 @@ function genCode(){
 }
 function copyCoachInviteLink(){
   if(!currentUser||currentUser.role!=='coach') return;
-  const payload={c:currentUser.code,f:currentUser.fname,l:currentUser.lname,i:currentUser.id};
-  const token='RCLINK:'+btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  // Embed coach profile in URL so athlete's device can import it without a backend
+  const payload={
+    id:currentUser.id,
+    fname:currentUser.fname,
+    lname:currentUser.lname,
+    email:currentUser.email,
+    code:currentUser.code,
+    role:'coach'
+  };
+  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const url='https://kevin79000.github.io/repcore/?coachpkg='+encoded;
   if(navigator.clipboard){
-    navigator.clipboard.writeText(token).then(()=>toast(' Lien copié ! Envoie-le à ton athlète par WhatsApp ou SMS.'));
-  } else {
-    const ta=document.createElement('textarea');ta.value=token;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
-    toast(' Lien copié !');
+    navigator.clipboard.writeText(url).then(()=>toast('✓ Lien copié ! Envoie-le à ton athlète par WhatsApp ou SMS.'));
+  }else{
+    const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();
+    toast('✓ Lien copié !');
   }
 }
 
@@ -1577,31 +1643,26 @@ function doAthleteCode(){
   const errEl=document.getElementById('ae-err');
   errEl.style.display='none';
   if(!raw){errEl.textContent='Entre un code valide.';errEl.style.display='block';return;}
-  // Try RCACCESS token (base64 JSON)
-  try{
-    const decoded=atob(raw.replace(/-/g,'+').replace(/_/g,'/'));
-    const data=JSON.parse(decoded);
-    if(data.type==='RCACCESS'&&data.coachId){
-      // Store pending code and redirect to register
-      localStorage.setItem('pendingRCACCESS', raw);
-      go('s-register');
-      return;
-    }
-  } catch(e){}
-  // Try as GCP student code
-  const users=DB.get('users')||{};
-  for(const coach of Object.values(users).filter(u=>u.role==='coach')){
-    const codes=coach.studentCodes||[];
-    const match=codes.find(c=>c.code===raw&&c.active);
-    if(match){
-      if(Date.now()>match.expiry){errEl.textContent='Ce code a expiré. Contacte ton coach.';errEl.style.display='block';return;}
-      localStorage.setItem('pendingStudentCode', raw);
-      localStorage.setItem('pendingCoachId', coach.id);
-      go('s-register');
-      return;
-    }
+  // Try RCACCESS token (starts with "RCACCESS:")
+  if(raw.startsWith('RCACCESS:')){
+    // Pass to s-client-code after registration — go register first
+    localStorage.setItem('pendingCode', raw);
+    go('s-register');
+    setTimeout(()=>selectRole('athlete'),50);
+    return;
   }
-  errEl.textContent='Code introuvable ou inactif.';
+  // Try coach main GCP code or student code
+  const users=DB.get('users')||{};
+  const allCoaches=Object.values(users).filter(u=>u.role==='coach');
+  // Check coach's main GCP code
+  const directCoach=allCoaches.find(u=>u.code&&u.code.toUpperCase()===raw);
+  if(directCoach){
+    localStorage.setItem('pendingCode', raw);
+    go('s-register');
+    setTimeout(()=>selectRole('athlete'),50);
+    return;
+  }
+  errEl.textContent='Code introuvable. Utilise le lien d\'invitation de ton coach ou entre son code GCP.';
   errEl.style.display='block';
 }
 function doLinkCoach(){

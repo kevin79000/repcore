@@ -557,18 +557,22 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 
 <!-- COACH CODE DISPLAY -->
 <div id="s-coach-code" class="screen" style="justify-content:center;padding:32px 24px">
-  <div class="anim-in" style="text-align:center">
-    <div style="font-size:52px;margin-bottom:16px"></div>
-    <h1 style="margin-bottom:8px">Ton code coach</h1>
-    <p class="sub" style="margin-bottom:16px;line-height:1.6">Partage ce code à tes athlètes pour qu'ils se connectent à toi.</p>
-    <div class="code-display" id="coach-code-val">——</div>
-    <p class="sub" style="margin-top:12px;font-size:11px">Code unique et personnel</p>
-    <div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;padding:14px 16px;margin-top:20px;text-align:left">
-      <div style="font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:8px"> Athlète sur un autre appareil ?</div>
-      <p style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:12px">Génère un lien d'invitation à envoyer par WhatsApp ou SMS. L'athlète le colle dans le champ code.</p>
-      <button class="btn btn-outline" style="font-size:11px;letter-spacing:1px" onclick="copyCoachInviteLink()"> Copier le lien d'invitation</button>
+  <div class="anim-in" style="text-align:center;max-width:380px;width:100%">
+    <div style="font-size:44px;margin-bottom:12px">🏋️</div>
+    <h1 style="margin-bottom:6px">Ton code coach</h1>
+    <div class="code-display" id="coach-code-val" style="margin:16px 0">——</div>
+
+    <!-- ACTION PRINCIPALE : lien d'invitation -->
+    <button class="btn btn-red" style="width:100%;margin-bottom:12px" onclick="copyCoachInviteLink()">📋 Copier le lien d'invitation</button>
+    <p class="sub" style="font-size:11px;line-height:1.6;margin-bottom:20px">Envoie ce lien à ton athlète par WhatsApp ou SMS.<br>Il le colle dans le champ code → lié instantanément.</p>
+
+    <!-- Info code court -->
+    <div style="background:#111;border:1px solid #1a1a1a;border-radius:10px;padding:12px;text-align:left;margin-bottom:20px">
+      <div style="font-size:10px;color:#444;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px">⚠️ Code court (même appareil uniquement)</div>
+      <p style="font-size:11px;color:#555;line-height:1.6;margin:0">Le code GCP ci-dessus ne fonctionne que si le coach et l'athlète utilisent le même téléphone/ordi. Pour un autre appareil, utilise le lien d'invitation.</p>
     </div>
-    <button class="btn btn-red" style="margin-top:20px" onclick="go('s-coach-home');loadCoachHome()">Espace Coach &rarr;</button>
+
+    <button class="btn btn-outline" style="width:100%" onclick="go('s-coach-home');loadCoachHome()">Espace Coach →</button>
   </div>
 </div>
 <!-- ATHLETE CODE ENTRY (after registration) -->
@@ -580,7 +584,7 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
       <p class="sub" style="line-height:1.6">Entre le code fourni par ton coach pour activer ton accès personnalisé.</p>
     </div>
     <div style="margin-bottom:16px">
-      <input id="cc-code" type="text" placeholder="RCACCESS:... ou GCP-XXXXXX"
+      <input id="cc-code" type="text" placeholder="Colle le lien d'invitation ou le code GCP-..."
         style="width:100%;padding:14px;background:#111;border:1px solid var(--border);border-radius:12px;color:#fff;font-family:Montserrat,sans-serif;font-size:13px;box-sizing:border-box;letter-spacing:1px"
         oninput="this.value=this.value.toUpperCase()">
       <div id="cc-err" class="err" style="display:none;margin-top:8px"></div>
@@ -1665,16 +1669,48 @@ function doAthleteCode(){
   errEl.textContent='Code introuvable. Utilise le lien d\'invitation de ton coach ou entre son code GCP.';
   errEl.style.display='block';
 }
+function linkToCoach(coach){
+  // Helper: link currentUser to a coach object and save
+  const users=DB.get('users')||{};
+  currentUser.coachId=coach.id;
+  currentUser.coachName=coach.fname+' '+coach.lname;
+  currentUser.coachCode=coach.code;
+  currentUser.status='COACHING_SUIVI';
+  if(!coach.clients) coach.clients=[];
+  if(!coach.clients.includes(currentUser.id)) coach.clients.push(currentUser.id);
+  users[currentUser.email]=currentUser;
+  users[coach.email]=coach;
+  DB.set('users',users);DB.set('session',currentUser);
+  toast('Lié à '+coach.fname+' '+coach.lname+' ✓');
+  openBilan('depart');
+}
+
 function doLinkCoach(){
   const raw=document.getElementById('cc-code').value.trim();
   if(!raw){return showErr('cc-err','Entre un code ou lien coach.');}
 
-  // Case 1: RCACCESS token (coaching access with expiry)
+  // Case 1: URL d'invitation coach (?coachpkg=BASE64) — cross-device
+  try{
+    const urlObj=new URL(raw);
+    const pkg=urlObj.searchParams.get('coachpkg');
+    if(pkg){
+      const coach=JSON.parse(decodeURIComponent(escape(atob(pkg))));
+      if(coach.id&&coach.role==='coach'&&coach.email){
+        // Importer le coach localement puis lier
+        const users=DB.get('users')||{};
+        users[coach.email]=Object.assign(users[coach.email]||{},coach);
+        DB.set('users',users);
+        return linkToCoach(coach);
+      }
+    }
+  }catch(e){}
+
+  // Case 2: RCACCESS token (avec expiry)
   if(raw.startsWith('RCACCESS:')){
     try{
       const payload=JSON.parse(decodeURIComponent(escape(atob(raw.slice(9)))));
       if(!payload.coachId||!payload.expiry) throw new Error('invalid');
-      if(Date.now()>payload.expiry){return showErr('cc-err','Ce code a expire. Demande un nouveau code a ton coach.');}
+      if(Date.now()>payload.expiry){return showErr('cc-err','Ce code a expiré. Demande un nouveau code à ton coach.');}
       currentUser.coachId=payload.coachId;
       currentUser.coachName=payload.coachName||'Coach';
       currentUser.status='COACHING_SUIVI';
@@ -1690,13 +1726,12 @@ function doLinkCoach(){
       }
       users[currentUser.email]=currentUser;
       DB.set('users',users);DB.set('session',currentUser);
-      const exp=new Date(payload.expiry).toLocaleDateString('fr-FR');
-      toast('Acces active jusqu&#39;au '+exp);
+      toast('Accès activé ✓');
       openBilan('depart');return;
     }catch(e){return showErr('cc-err','Code invalide ou corrompu. Contacte ton coach.');}
   }
 
-  // Case 2: RCLINK token (legacy basic invite)
+  // Case 3: RCLINK token (legacy)
   if(raw.startsWith('RCLINK:')){
     try{
       const payload=JSON.parse(decodeURIComponent(escape(atob(raw.slice(7)))));
@@ -1708,29 +1743,22 @@ function doLinkCoach(){
       const users=DB.get('users')||{};
       users[currentUser.email]=currentUser;
       DB.set('users',users);DB.set('session',currentUser);
-      toast('Lie a '+currentUser.coachName);
+      toast('Lié à '+currentUser.coachName+' ✓');
       openBilan('depart');return;
-    }catch(e){return showErr('cc-err','Lien invalide. Demande un nouveau lien a ton coach.');}
+    }catch(e){return showErr('cc-err','Lien invalide. Demande un nouveau lien à ton coach.');}
   }
 
-  // Case 3: GCP-XXXXXX code (same device)
+  // Case 4: Code GCP-XXXXXX
   const code=raw.toUpperCase().replace(/\s/g,'');
-  const users=DB.get('users')||{};
-  const allUsers=Object.values(users);
-  const coach=allUsers.find(u=>u.role==='coach'&&u.code&&u.code.toUpperCase()===code);
-  if(!coach){
-    return showErr('cc-err','Code introuvable. Ton coach doit te generer un code depuis son espace coach (onglet CODES).');
+  if(code.startsWith('GCP-')){
+    const users=DB.get('users')||{};
+    const coach=Object.values(users).find(u=>u.role==='coach'&&u.code&&u.code.toUpperCase()===code);
+    if(coach) return linkToCoach(coach);
+    // Code GCP non trouvé → probablement autre appareil
+    return showErr('cc-err','❌ Code introuvable sur cet appareil.\n\nTon coach doit appuyer sur "Copier le lien d\'invitation" depuis son écran de code, puis t\'envoyer ce lien par WhatsApp. Colle ce lien ici à la place du code court.');
   }
-  currentUser.coachId=coach.id;
-  currentUser.coachName=coach.fname+' '+coach.lname;
-  currentUser.status='COACHING_SUIVI';
-  if(!coach.clients) coach.clients=[];
-  if(!coach.clients.includes(currentUser.id)) coach.clients.push(currentUser.id);
-  users[currentUser.email]=currentUser;
-  users[coach.email]=coach;
-  DB.set('users',users);DB.set('session',currentUser);
-  toast('Lie a '+coach.fname+' '+coach.lname);
-  openBilan('depart');
+
+  showErr('cc-err','Format non reconnu. Entre le lien d\'invitation de ton coach.');
 }
 function showCoachCode(){
   document.getElementById('coach-code-val').textContent=currentUser.code;

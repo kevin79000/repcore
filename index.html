@@ -1499,8 +1499,8 @@ function routeUser(){
   if(currentUser.role==='coach'){loadCoachHome();return;}
   // Athlète : vérifier l'accès
   const s=currentUser.status||'FREE';
-  // Si FREE = jamais eu d'accès → montrer l'écran de saisie de code
-  if(s==='FREE'){return go('s-client-code');}
+  // Si FREE = pas encore de code actif → retour à l'accueil (coach/athlète)
+  if(s==='FREE'){silentLogout();return go('s-welcome');}
   if(!checkAccess(currentUser)){go('s-access-gate');loadAccessGate();return;}
   loadClientHome();
 }

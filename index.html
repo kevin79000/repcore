@@ -1466,20 +1466,9 @@ function compressImage(file, maxPx, quality, cb){
 }
 
 const DB={
-  get(k){
-    // La session utilise sessionStorage (effacée à la fermeture de l'app)
-    // Toutes les autres données restent dans localStorage
-    if(k==='session') try{return JSON.parse(sessionStorage.getItem('rc_session'))}catch{return null}
-    try{return JSON.parse(localStorage.getItem('rc_'+k))}catch{return null}
-  },
-  set(k,v){
-    if(k==='session'){sessionStorage.setItem('rc_session',JSON.stringify(v));return;}
-    localStorage.setItem('rc_'+k,JSON.stringify(v));
-  },
-  del(k){
-    if(k==='session'){sessionStorage.removeItem('rc_session');return;}
-    localStorage.removeItem('rc_'+k);
-  },
+  get(k){try{return JSON.parse(localStorage.getItem('rc_'+k))}catch{return null}},
+  set(k,v){localStorage.setItem('rc_'+k,JSON.stringify(v))},
+  del(k){localStorage.removeItem('rc_'+k)},
 };
 // ── Import coach profile embedded in invite URL (?coachpkg=BASE64) ──
 (function importCoachFromURL(){

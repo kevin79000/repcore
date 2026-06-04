@@ -1,4 +1,4 @@
-const CACHE = 'repcore-v56';
+const CACHE = 'repcore-v57';
 const FILES = ['./index.html', './manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png', './icons/dumbbell.png'];
 
 self.addEventListener('install', e => {

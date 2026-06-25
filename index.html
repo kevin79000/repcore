@@ -1545,7 +1545,7 @@ const CLOUD={
     try{
       const safe={};
       for(const[email,u] of Object.entries(users)){
-        safe[email]={...u};delete safe[email].pwd;
+        safe[email]={...u};delete safe[email].pwd;delete safe[email]._st;delete safe[email]._stb64;delete safe[email]._sk;
         if(safe[email].bilans) safe[email].bilans=safe[email].bilans.map(b=>{
           const c={...b};Object.keys(c).forEach(k=>{if(k.includes('photo'))delete c[k];});return c;
         });
@@ -1573,7 +1573,8 @@ const CLOUD={
     const hadToken=this.canWrite();
     if(!hadToken){
       for(const u of Object.values(cloud)){
-        if(u._st){this.configure(u._st);break;}
+        const tok=u._st||(u._stb64?atob(u._stb64):null);
+        if(tok){this.configure(tok);break;}
       }
     }
     const local=JSON.parse(localStorage.getItem('rc_users')||'{}');
@@ -4111,7 +4112,8 @@ function ini(f,l){return((f||'?')[0]+(l||'?')[0]).toUpperCase();}
 function ago(ts){const d=Math.floor((Date.now()-ts)/864e5);return d===0?"aujourd'hui":d===1?"hier":"il y a "+d+"j";}
 function saveUser(){
   currentUser.updatedAt=Date.now();
-  if(CLOUD.canWrite()) currentUser._st=CLOUD._token();
+  // Nettoyer les anciens champs token (jamais dans le cloud)
+  delete currentUser._st;delete currentUser._stb64;delete currentUser._sk;
   const users=DB.get('users')||{};
   users[currentUser.email]=currentUser;
   DB.set('users',users);

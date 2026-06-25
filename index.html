@@ -825,6 +825,12 @@ const COACH_PHOTO='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
   </div>
 </div>
 
+<!-- EVOLUTION BILANS COACH -->
+<div id="s-coach-bilan-evo" class="screen">
+  <div class="topbar"><button class="back-btn" onclick="go('s-coach-client')">←</button><span class="topbar-title" id="evo-title">Évolution</span><span></span></div>
+  <div class="scroll-area" style="flex:1" id="evo-content"></div>
+</div>
+
 <!-- COACH PROGRAM EDITOR -->
 <div id="s-coach-program" class="screen">
   <div class="topbar"><button class="back-btn" onclick="go('s-coach-client')">←</button><span class="topbar-title">Programme</span>
@@ -2193,7 +2199,279 @@ function openClientDetail(cid,_refresh){
     }).catch(()=>{});
   }
 }
-function viewClientBilans(){go('s-coach-client');}
+function viewClientBilans(){
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c||!c.bilans?.length){toast('Aucun bilan disponible','var(--orange)');return;}
+  document.getElementById('evo-title').textContent=c.fname+' — Évolution';
+  renderBilanEvolution(c);
+  go('s-coach-bilan-evo');
+}
+
+function drawLineChart(canvas,datasets,labels){
+  if(!canvas)return;
+  const W=canvas.width=canvas.parentElement.offsetWidth||300,H=canvas.height=160;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pad={t:16,b:28,l:36,r:12};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  // Compute global min/max across all datasets
+  const allVals=datasets.flatMap(d=>d.data.filter(v=>v>0));
+  if(!allVals.length)return;
+  const mn=Math.min(...allVals),mx=Math.max(...allVals);
+  const range=mx-mn||1;
+  const yMin=mn-range*0.12,yMax=mx+range*0.12;
+  // Grid
+  ctx.strokeStyle='#1e1e1e';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+ch*(1-i/4);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(pad.l+cw,y);ctx.stroke();
+    ctx.fillStyle='#444';ctx.font='9px Montserrat,sans-serif';
+    ctx.textAlign='right';ctx.fillText(Math.round(yMin+(yMax-yMin)*i/4),pad.l-3,y+3);
+  }
+  // X labels
+  const n=labels.length;
+  labels.forEach((lbl,i)=>{
+    const x=pad.l+(n<2?cw/2:cw*i/(n-1));
+    ctx.fillStyle='#555';ctx.font='8px Montserrat,sans-serif';ctx.textAlign='center';
+    ctx.fillText(lbl,x,H-6);
+  });
+  // Lines
+  datasets.forEach(ds=>{
+    const pts=ds.data.map((v,i)=>({
+      x:pad.l+(n<2?cw/2:cw*i/(n-1)),
+      y:pad.t+ch*(1-(v-yMin)/(yMax-yMin)),
+      ok:v>0
+    }));
+    ctx.beginPath();ctx.strokeStyle=ds.color;ctx.lineWidth=2;ctx.lineJoin='round';
+    let started=false;
+    pts.forEach(p=>{if(!p.ok)return;if(!started){ctx.moveTo(p.x,p.y);started=true;}else ctx.lineTo(p.x,p.y);});
+    ctx.stroke();
+    pts.forEach(p=>{if(!p.ok)return;ctx.beginPath();ctx.arc(p.x,p.y,3,0,2*Math.PI);ctx.fillStyle=ds.color;ctx.fill();});
+  });
+}
+
+function renderBilanEvolution(c){
+  const bilans=c.bilans||[];
+  const maxB=15;
+  const height=parseFloat(c._evol_height||c['init-height']||c['deb-height']||0);
+  const gender=c.gender||'H';
+  const isFemale=/^[fF]/.test(String(gender));
+
+  // Measurements list
+  const MEAS=[
+    {key:'bicep-r',label:'Tour de biceps D',color:'#e53935'},
+    {key:'bicep-l',label:'Tour de biceps G',color:'#e57373'},
+    {key:'chest',label:'Tour de poitrine',color:'#ffd600'},
+    {key:'waist',label:'Tour de taille',color:'#00e5ff'},
+    {key:'hips',label:'Tour de hanche',color:'#69f0ae'},
+    {key:'glutes',label:'Tour de fessier',color:'#ff6d00'},
+    {key:'thigh-r',label:'Tour de cuisse D',color:'#ce93d8'},
+    {key:'thigh-l',label:'Tour de cuisse G',color:'#b39ddb'},
+    {key:'calf-r',label:'Tour de Mollet D',color:'#80cbc4'},
+    {key:'calf-l',label:'Tour de Mollet G',color:'#80deea'},
+    {key:'bust',label:'Tour de buste',color:'#a5d6a7'},
+    {key:'neck',label:'Tour de cou',color:'#ffcc80'},
+  ];
+
+  // Groups for mini charts
+  const GROUPS=[
+    {label:'Biceps',keys:['bicep-r','bicep-l'],colors:['#e53935','#e57373']},
+    {label:'Tour de poitrine',keys:['chest'],colors:['#ffd600']},
+    {label:'Tour de taille',keys:['waist'],colors:['#00e5ff']},
+    {label:'Tour de hanche',keys:['hips'],colors:['#69f0ae']},
+    {label:'Tour de fessier',keys:['glutes'],colors:['#ff6d00']},
+    {label:'Tour de cuisses',keys:['thigh-r','thigh-l'],colors:['#ce93d8','#b39ddb']},
+    {label:'Tour de mollets',keys:['calf-r','calf-l'],colors:['#80cbc4','#80deea']},
+    {label:'Tour de buste',keys:['bust'],colors:['#a5d6a7']},
+  ];
+
+  // Get value for bilan index (1-indexed)
+  const bVal=(b,k)=>getBM(b,k)||0;
+
+  // Build bilan headers (1→N)
+  const bHeaders=Array.from({length:maxB},(_,i)=>`Bilan ${i+1}`);
+
+  // ── Table des mensurations ──────────────────────────────────────────
+  const buildMeasTable=()=>{
+    const rowColor={
+      'bicep-r':'#e53935','bicep-l':'#c62828','chest':'#c79800','waist':'#0097a7',
+      'hips':'#2e7d32','glutes':'#e65100','thigh-r':'#7b1fa2','thigh-l':'#512da8',
+      'calf-r':'#00695c','calf-l':'#00838f','bust':'#388e3c','neck':'#ef6c00'
+    };
+    const labelBg={'bicep-r':'#e53935','bicep-l':'#c62828','chest':'#c79800','waist':'#0097a7',
+      'hips':'#2e7d32','glutes':'#e65100','thigh-r':'#7b1fa2','thigh-l':'#512da8',
+      'calf-r':'#00695c','calf-l':'#00838f','bust':'#388e3c','neck':'#ef6c00'};
+    const headerStyle='background:#1a1a1a;color:#fff;font-size:9px;font-weight:800;padding:5px 6px;text-align:center;white-space:nowrap;border:1px solid #222;';
+    const measStyle=`font-size:8px;font-weight:800;padding:4px 6px;text-align:center;white-space:nowrap;border:1px solid #1a1a1a;`;
+    let th=`<th style="${headerStyle}">Parties mesurées</th>`;
+    for(let i=0;i<maxB;i++) th+=`<th style="${headerStyle}">Bilan ${i+1}</th>`;
+    let rows=MEAS.map(m=>{
+      let td=`<td style="background:${labelBg[m.key]||'#333'};color:#fff;font-size:8px;font-weight:800;padding:4px 6px;white-space:nowrap;border:1px solid #1a1a1a;">${m.label}</td>`;
+      for(let i=0;i<maxB;i++){
+        const v=bilans[i]?bVal(bilans[i],m.key):0;
+        td+=`<td style="${measStyle}color:${v?'#fff':'#333'};background:${v?'#0f0f0f':'#080808'};">${v||0}</td>`;
+      }
+      return `<tr>${td}</tr>`;
+    }).join('');
+    return `<div style="overflow-x:auto;margin-bottom:24px"><table style="border-collapse:collapse;min-width:100%"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+
+  // ── Mini graphiques par groupe ──────────────────────────────────────
+  const buildGroupCharts=()=>{
+    const labels=bilans.map((_,i)=>`${i+1}`);
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">`+
+      GROUPS.map((g,gi)=>`<div style="background:#0f0f0f;border:1px solid #1c1c1c;border-radius:10px;padding:10px">
+        <div style="font-size:10px;font-weight:800;color:${g.colors[0]};text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${g.label}</div>
+        <canvas id="evo-chart-${gi}" style="width:100%;display:block"></canvas>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:4px;flex-wrap:wrap">
+          ${g.keys.map((k,ki)=>`<span style="font-size:8px;color:${g.colors[ki]};font-weight:700">— ${k.endsWith('-r')?'Droit':k.endsWith('-l')?'Gauche':g.label}</span>`).join('')}
+        </div>
+      </div>`).join('')+`</div>`;
+  };
+
+  // ── Evolution du poids ─────────────────────────────────────────────
+  const buildWeightSection=()=>{
+    const weightStyle=`font-size:9px;font-weight:800;padding:4px 6px;text-align:center;border:1px solid #1a1a1a;background:#0f0f0f;color:#fff;`;
+    let th=`<th style="background:#1a1a1a;color:#e53935;font-size:9px;font-weight:800;padding:5px 8px;border:1px solid #222;">Bilan</th>`;
+    for(let i=0;i<maxB;i++) th+=`<th style="background:#1a1a1a;color:#e53935;font-size:9px;font-weight:800;padding:5px 6px;text-align:center;border:1px solid #222;">Bilan ${i+1}</th>`;
+    let td=`<td style="${weightStyle}background:#1a1a1a;color:#e53935;">Poids en kg</td>`;
+    for(let i=0;i<maxB;i++){
+      const v=bilans[i]?getBW(bilans[i]):0;
+      td+=`<td style="${weightStyle}color:${v?'#fff':'#333'}">${v||0}</td>`;
+    }
+    return `
+      <div style="font-size:11px;font-weight:800;color:#e53935;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px">EVOLUTION DU POIDS EN KG</div>
+      <div style="background:#0f0f0f;border:1px solid #1c1c1c;border-radius:10px;padding:12px;margin-bottom:12px">
+        <canvas id="evo-weight-chart" style="width:100%;display:block"></canvas>
+      </div>
+      <div style="overflow-x:auto;margin-bottom:24px"><table style="border-collapse:collapse;min-width:100%"><tbody><tr>${th}</tr><tr>${td}</tr></tbody></table></div>`;
+  };
+
+  // ── % Masse grasse + masse maigre ──────────────────────────────────
+  const buildFatSection=()=>{
+    const bfVals=bilans.map(b=>{
+      const w=getBW(b),waist=getBM(b,'waist'),neck=getBM(b,'neck'),hips=getBM(b,'hips');
+      const bf=calcBF(waist,neck,hips,height,gender);
+      const mg=bf!==null&&w?Math.round(w*bf/10)/10:null;
+      const mm=mg!==null&&w?Math.round((w-mg)*10)/10:null;
+      return{bf,mg,mm,w};
+    });
+    // Formula note
+    const formulaNote=isFemale
+      ?`<div style="font-size:9px;color:#555;text-align:center;margin-bottom:12px">Formule US Navy (femme) : BF% = 495/(1,29579 − 0,35004×log(taille+hanches−cou) + 0,22100×log(taille)) − 450</div>`
+      :`<div style="font-size:9px;color:#555;text-align:center;margin-bottom:12px">Formule US Navy (homme) : BF% = 495/(1,0324 − 0,19077×log(taille−cou) + 0,15456×log(taille)) − 450</div>`;
+    // BF% table
+    const thStyle='background:#1a1a1a;color:#e53935;font-size:9px;font-weight:800;padding:5px 6px;text-align:center;border:1px solid #222;';
+    const tdStyle='font-size:9px;font-weight:800;padding:4px 6px;text-align:center;border:1px solid #1a1a1a;background:#0f0f0f;';
+    let th=`<th style="${thStyle}text-align:left">Bilan</th>`;
+    for(let i=0;i<maxB;i++) th+=`<th style="${thStyle}">Bilan ${i+1}</th>`;
+    const bfRow=(label,fn,unit='')=>{
+      let td=`<td style="${tdStyle}color:#e53935;background:#1a1a1a;">${label}</td>`;
+      for(let i=0;i<maxB;i++){
+        const v=bfVals[i]?fn(bfVals[i]):null;
+        td+=`<td style="${tdStyle}color:${v!==null?'#fff':'#333'}">${v!==null?v+unit:'—'}</td>`;
+      }
+      return `<tr>${td}</tr>`;
+    };
+    // Pie charts for each bilan (first 3 with data)
+    const pieBilans=bfVals.map((b,i)=>b.mg!==null?{idx:i,mg:b.mg,mm:b.mm}:null).filter(Boolean).slice(0,4);
+    const pies=pieBilans.length?`<div style="display:flex;gap:12px;overflow-x:auto;margin-bottom:16px;justify-content:center">`+
+      pieBilans.map(p=>`<div style="text-align:center;flex-shrink:0">
+        <div style="font-size:10px;font-weight:800;margin-bottom:6px">Bilan ${p.idx+1}</div>
+        <canvas id="evo-pie-${p.idx}" width="100" height="100"></canvas>
+        <div style="font-size:8px;color:#e53935;margin-top:4px">MG: ${p.mg}kg</div>
+        <div style="font-size:8px;color:#aaa;margin-top:1px">MM: ${p.mm}kg</div>
+      </div>`).join('')+`</div>`:'';
+    return `
+      <div style="background:#0f0f0f;border:1px solid #1c1c1c;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:9px;color:#aaa;text-align:center;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;font-weight:700">% de graisse corporelle</div>
+        <canvas id="evo-fat-chart" style="width:100%;display:block"></canvas>
+      </div>
+      ${formulaNote}${pies}
+      <div style="overflow-x:auto;margin-bottom:24px"><table style="border-collapse:collapse;min-width:100%"><thead><tr>${th}</tr></thead><tbody>
+        ${bfRow('% graisse corporelle',v=>v.bf!==null?v.bf:null,'%')}
+        ${bfRow('Masse grasse en Kg',v=>v.mg)}
+        ${bfRow('Masse maigre en Kg',v=>v.mm)}
+      </tbody></table></div>`;
+  };
+
+  // ── Photos évolution ──────────────────────────────────────────────
+  const buildPhotos=()=>{
+    const getP=(b,t)=>b['bil-photo-'+t]||b['deb-photo-'+t]||null;
+    const VIEWS=[{k:'face',label:'De Face'},{k:'back',label:'De Dos'},{k:'side',label:'De Profil'}];
+    const hasAny=bilans.some(b=>VIEWS.some(v=>getP(b,v.k)));
+    if(!hasAny)return'';
+    const thS='background:#111;color:#777;font-size:9px;font-weight:800;padding:5px 8px;text-align:center;border:1px solid #1a1a1a;white-space:nowrap;';
+    let th=`<th style="${thS}">PHOTOS</th>`;
+    for(let i=0;i<maxB;i++) th+=`<th style="${thS}">Bilan ${i+1}</th>`;
+    const rows=VIEWS.map(v=>{
+      let td=`<td style="background:#111;color:#777;font-size:9px;font-weight:800;padding:5px 8px;text-align:center;border:1px solid #1a1a1a;">${v.label}</td>`;
+      for(let i=0;i<maxB;i++){
+        const b=bilans[i];
+        const img=b?getP(b,v.k):null;
+        td+=img
+          ?`<td style="border:1px solid #1a1a1a;padding:2px;"><img src="${img}" style="width:64px;height:90px;object-fit:cover;display:block;border-radius:3px"></td>`
+          :`<td style="background:#0a0a0a;border:1px solid #1a1a1a;width:68px;height:94px;"></td>`;
+      }
+      return `<tr>${td}</tr>`;
+    }).join('');
+    return `<div style="margin-top:8px;margin-bottom:8px;font-size:10px;font-weight:800;color:#e53935;text-align:center;text-transform:uppercase;letter-spacing:2px">Photos Évolution</div>
+      <div style="overflow-x:auto;margin-bottom:24px"><table style="border-collapse:collapse"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+
+  // ── Assemble HTML ─────────────────────────────────────────────────
+  const html=`<div class="pad" style="padding-bottom:40px">
+    <h3 style="margin-bottom:16px;text-align:center">Mensurations</h3>
+    ${buildMeasTable()}
+    <h3 style="margin-bottom:12px;text-align:center">Évolution par groupe</h3>
+    ${buildGroupCharts()}
+    ${buildWeightSection()}
+    <h3 style="margin-bottom:12px;text-align:center">Composition corporelle</h3>
+    ${buildFatSection()}
+    ${buildPhotos()}
+  </div>`;
+  document.getElementById('evo-content').innerHTML=html;
+
+  // ── Draw charts after DOM is ready ────────────────────────────────
+  requestAnimationFrame(()=>{
+    const labels=bilans.map((_,i)=>`${i+1}`);
+    // Group charts
+    GROUPS.forEach((g,gi)=>{
+      const cv=document.getElementById(`evo-chart-${gi}`);
+      if(!cv)return;
+      const datasets=g.keys.map((k,ki)=>({
+        data:bilans.map(b=>getBM(b,k)||0),
+        color:g.colors[ki]
+      }));
+      drawLineChart(cv,datasets,labels);
+    });
+    // Weight chart
+    const wcv=document.getElementById('evo-weight-chart');
+    if(wcv) drawLineChart(wcv,[{data:bilans.map(b=>getBW(b)||0),color:'#e53935'}],labels);
+    // Fat chart
+    const fcv=document.getElementById('evo-fat-chart');
+    if(fcv){
+      const bfData=bilans.map(b=>{
+        const w=getBW(b),waist=getBM(b,'waist'),neck=getBM(b,'neck'),hips=getBM(b,'hips');
+        return calcBF(waist,neck,hips,height,gender)||0;
+      });
+      drawLineChart(fcv,[{data:bfData,color:'#e53935'}],labels);
+    }
+    // Pie charts
+    bilans.forEach((_,i)=>{
+      if(!document.getElementById(`evo-pie-${i}`))return;
+      const b=bilans[i];
+      const w=getBW(b);
+      const waist=getBM(b,'waist'),neck=getBM(b,'neck'),hips=getBM(b,'hips');
+      const bf=calcBF(waist,neck,hips,height,gender);
+      if(bf===null||!w)return;
+      const mg=Math.round(w*bf/10)/10;
+      const mm=Math.round((w-mg)*10)/10;
+      drawPie(`evo-pie-${i}`,[{val:mg,color:'#e53935'},{val:mm,color:'#444'}]);
+    });
+  });
+}
 
 // ======= COACH PROGRAM EDITOR =======
 const defEx=[

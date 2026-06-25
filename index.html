@@ -1526,7 +1526,9 @@ const CLOUD={
   // Lecture publique via raw.githubusercontent.com (no auth needed)
   async pull(){
     try{
-      const r=await fetch('https://raw.githubusercontent.com/'+this._repo+'/main/users.json?t='+Date.now());
+      const ctrl=new AbortController();
+      setTimeout(()=>ctrl.abort(),5000);
+      const r=await fetch('https://raw.githubusercontent.com/'+this._repo+'/main/users.json?t='+Date.now(),{signal:ctrl.signal});
       if(!r.ok)return null;
       return await r.json();
     }catch{return null;}
@@ -1544,6 +1546,9 @@ const CLOUD={
       const safe={};
       for(const[email,u] of Object.entries(users)){
         safe[email]={...u};delete safe[email].pwd;
+        if(safe[email].bilans) safe[email].bilans=safe[email].bilans.map(b=>{
+          const c={...b};Object.keys(c).forEach(k=>{if(k.includes('photo'))delete c[k];});return c;
+        });
       }
       const apiUrl='https://api.github.com/repos/'+this._repo+'/contents/users.json';
       const headers={'Authorization':'Bearer '+this._token(),'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'};
@@ -2183,7 +2188,7 @@ function openClientDetail(cid){
       <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-weight:700">${new Date(b.date).toLocaleDateString('fr-FR')}</span><span class="badge badge-green">Complété</span></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap"><span class="sub">Poids: <strong style="color:#fff">${bw||'—'}kg</strong></span><span class="sub">MG: <strong style="color:#fff">${bfPct!==null?bfPct+'%':'—'}</strong></span><span class="sub">Taille: <strong style="color:#fff">${bWaist||'—'}cm</strong></span></div>
       ${b['bil-ressenti']?`<div style="margin-top:8px;font-size:11px;color:var(--sub);font-style:italic">"${String(b['bil-ressenti']).slice(0,80)}"</div>`:''}
-    </div>`).join('');
+    </div>`}).join('');
   }
   go('s-coach-client');
 }

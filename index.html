@@ -1570,7 +1570,8 @@ const CLOUD={
     const cloud=await this.pull();
     if(!cloud)return;
     // Auto-configurer le token depuis n'importe quel profil cloud qui l'a
-    if(!this.canWrite()){
+    const hadToken=this.canWrite();
+    if(!hadToken){
       for(const u of Object.values(cloud)){
         if(u._st){this.configure(u._st);break;}
       }
@@ -1596,6 +1597,8 @@ const CLOUD={
       merged[email].bilans=allBilans;
     }
     localStorage.setItem('rc_users',JSON.stringify(merged));
+    // Token tout juste obtenu → pousser immédiatement les données locales vers le cloud
+    if(!hadToken&&this.canWrite()) this.push(merged);
   },
 
   // Générer le QR code de configuration pour de nouveaux appareils
@@ -1729,6 +1732,10 @@ window.onload=()=>{
         // Rafraîchir la liste des athlètes si le coach est sur son dashboard
         if(currentUser.role==='coach'&&document.getElementById('s-coach-home')?.classList.contains('active')){
           loadCoachHome();
+        }
+        // Rafraîchir le profil athlète si ouvert (bilans qui arrivent du cloud)
+        if(currentUser.role==='coach'&&document.getElementById('s-coach-client')?.classList.contains('active')&&currentClientId){
+          openClientDetail(currentClientId,true);
         }
       },30000);
     },500);

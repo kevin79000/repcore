@@ -3478,7 +3478,7 @@ function getPrevPerf(name){
 }
 
 // ======= BILAN MULTI-STEP =======
-let bilStep=0,bilType='coaching',bilData={};
+let bilStep=0,bilType='coaching',bilData={},_bilPhotoLoading=0;
 
 function openBilanChoice(){
   const hasDepart=currentUser.bilans?.some(b=>b.type==='depart');
@@ -3486,7 +3486,7 @@ function openBilanChoice(){
   go('s-bilan-choice');
 }
 function openBilan(type){
-  bilType=type;bilStep=0;bilData={};
+  bilType=type;bilStep=0;bilData={};_bilPhotoLoading=0;
   renderBilStep();go('s-bilan');
 }
 function bilBack(){
@@ -3496,7 +3496,10 @@ function bilBack(){
 function bilNext(){
   const steps=bilType==='depart'?DEB_STEPS:BIL_STEPS;
   if(bilStep<steps.length-1){bilStep++;renderBilStep();}
-  else{saveBilanFinal();}
+  else{
+    if(_bilPhotoLoading>0){toast('Photos en cours de compression, patiente une seconde...','var(--orange)');setTimeout(bilNext,800);return;}
+    saveBilanFinal();
+  }
 }
 function renderBilStep(){
   const steps=bilType==='depart'?DEB_STEPS:BIL_STEPS;
@@ -3530,11 +3533,13 @@ function bMeas(id,label,unit){return`<div class="bil-row"><span class="bil-row-l
 function bLbl(txt){return`<div style="font-size:11px;font-weight:700;color:#e0e0e0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;margin-top:14px">${txt}</div>`;}
 function loadBilPhoto(input,key){
   const f=input.files[0];if(!f)return;
+  _bilPhotoLoading++;
+  const lbl=input.closest('label');
+  if(lbl){lbl.style.color='#888';lbl.innerHTML='⏳ Compression...';}
   compressImage(f,1200,0.75,data=>{
+    _bilPhotoLoading--;
     bilData[key]=data;
-    // Backup dans clé séparée — survit aux écrasements de sync
     try{localStorage.setItem('rc_pendingphoto_'+key,data);}catch(e){}
-    const lbl=input.closest('label');
     if(lbl){lbl.style.background='#001a00';lbl.style.borderColor='#22c55e';lbl.style.color='#22c55e';lbl.innerHTML=' Ajoutée';}
   });
 }

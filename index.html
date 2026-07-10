@@ -2362,9 +2362,16 @@ function renderBilanEvolution(c){
       return{bf,mg,mm,w};
     });
     // Formula note
-    const formulaNote=isFemale
-      ?`<div style="font-size:9px;color:#555;text-align:center;margin-bottom:12px">Formule US Navy (femme) : BF% = 495/(1,29579 − 0,35004×log(taille+hanches−cou) + 0,22100×log(taille)) − 450</div>`
-      :`<div style="font-size:9px;color:#555;text-align:center;margin-bottom:12px">Formule US Navy (homme) : BF% = 495/(1,0324 − 0,19077×log(taille−cou) + 0,15456×log(taille)) − 450</div>`;
+    const formulaNote=`<div style="background:#111;border:1px solid #222;border-radius:8px;padding:12px;margin-bottom:14px;font-size:10px;line-height:1.8">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:#e53935;margin-bottom:6px">Formule US Navy ${isFemale?'(Femme)':'(Homme)'} — Calcul automatique</div>
+      ${isFemale
+        ?`<div style="color:#aaa;font-family:monospace;font-size:10px">%MG = 495 / [1,29579 − 0,35004 × log(<b style="color:#fff">taille</b> + <b style="color:#69f0ae">hanches</b> − <b style="color:#ffd600">cou</b>) + 0,22100 × log(<b style="color:#4fc3f7">hauteur</b>)] − 450</div>
+         <div style="color:#555;font-size:9px;margin-top:4px">taille = tour de taille · hanches = tour de hanches · cou = tour de cou · hauteur = taille en cm</div>`
+        :`<div style="color:#aaa;font-family:monospace;font-size:10px">%MG = 495 / [1,0324 − 0,19077 × log(<b style="color:#fff">taille</b> − <b style="color:#ffd600">cou</b>) + 0,15456 × log(<b style="color:#4fc3f7">hauteur</b>)] − 450</div>
+         <div style="color:#555;font-size:9px;margin-top:4px">taille = tour de taille · cou = tour de cou · hauteur = taille en cm</div>`
+      }
+      <div style="margin-top:8px;color:#888;font-size:9px;border-top:1px solid #222;padding-top:8px"> Précision estimée ±3% par rapport à la réalité. La formule est une estimation — pour un résultat précis, privilégier une pesée hydrostatique ou DEXA.</div>
+    </div>`;
     // BF% table
     const thStyle='background:#1a1a1a;color:#e53935;font-size:9px;font-weight:800;padding:5px 6px;text-align:center;border:1px solid #222;';
     const tdStyle='font-size:9px;font-weight:800;padding:4px 6px;text-align:center;border:1px solid #1a1a1a;background:#0f0f0f;';

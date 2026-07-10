@@ -2203,6 +2203,18 @@ function openClientDetail(cid,_refresh){
     }).catch(()=>{});
   }
 }
+function saveEvoHeight(cid){
+  const h=parseFloat(document.getElementById('evo-height-input')?.value||0);
+  if(!h||h<100||h>220){toast('Taille invalide (100-220 cm)','var(--orange)');return;}
+  const users=DB.get('users')||{};
+  const at=Object.values(users).find(u=>u.id===cid);
+  if(!at){toast('Athlète introuvable','var(--red)');return;}
+  at._evol_height=h;
+  users[at.email]=at;
+  DB.set('users',users);
+  renderBilanEvolution(at);
+}
+
 function viewClientBilans(){
   const users=DB.get('users')||{};
   const c=Object.values(users).find(u=>u.id===currentClientId);
@@ -2258,9 +2270,10 @@ function drawLineChart(canvas,datasets,labels){
 function renderBilanEvolution(c){
   const bilans=c.bilans||[];
   const maxB=15;
-  // Height: chercher dans le profil puis dans le bilan de départ
+  // Height: chercher dans le profil, puis bilan départ, puis tous les bilans
   const deb=bilans.find(b=>b.type==='depart');
-  const height=parseFloat(c._evol_height||c['init-height']||deb?.['deb-height']||c['deb-height']||0);
+  const heightFromBilans=bilans.map(b=>parseFloat(b['deb-height']||b['bil-height']||0)).find(h=>h>100)||0;
+  const height=parseFloat(c._evol_height||c['init-height']||c.height||deb?.['deb-height']||c['deb-height']||heightFromBilans||0);
   // Gender: 'femme' / 'homme' / 'H' / 'F'
   const gender=c._evol_gender||c.gender||'H';
   const isFemale=/^[fFf]/.test(String(gender))||String(gender).toLowerCase()==='femme';
@@ -2442,6 +2455,17 @@ function renderBilanEvolution(c){
     ${buildGroupCharts()}
     ${buildWeightSection()}
     <h3 style="margin-bottom:12px;text-align:center">Composition corporelle</h3>
+    ${!height?`<div style="background:#1a0a00;border:1px solid #e5393533;border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px">
+      <div style="font-weight:800;color:#e53935;margin-bottom:6px"> Taille manquante</div>
+      <div style="color:#aaa;margin-bottom:10px;font-size:11px">La taille de l'athlète est nécessaire pour calculer le % de masse grasse.</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="evo-height-input" type="number" placeholder="Ex: 165" min="100" max="220"
+          style="width:90px;padding:6px 10px;background:#0a0a0a;border:1px solid #333;border-radius:6px;color:#fff;font-size:14px;font-weight:700;font-family:Montserrat,sans-serif">
+        <span style="color:#666;font-size:12px">cm</span>
+        <button onclick="saveEvoHeight('${c.id}')"
+          style="padding:6px 14px;background:#e53935;border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:Montserrat,sans-serif">Valider</button>
+      </div>
+    </div>`:''}
     ${buildFatSection()}
     ${buildPhotos()}
   </div>`;
@@ -3622,6 +3646,10 @@ function saveBilanFinal(){
   if(bilType==='depart') currentUser.questionnaireComplete=true;
   if(bilData['bil-weight']) currentUser.weight=bilData['bil-weight'];
   if(bilData['deb-weight']) currentUser.weight=bilData['deb-weight'];
+  // Propager hauteur et genre vers le profil pour les calculs de composition
+  const _h=parseFloat(bilData['deb-height']||bilData['bil-height']||0);
+  if(_h>100&&_h<250) currentUser._evol_height=_h;
+  if(bilData['deb-gender']&&!currentUser._evol_gender) currentUser._evol_gender=bilData['deb-gender'];
   if(!currentUser.bilans) currentUser.bilans=[];
   currentUser.bilans.push(bi);
   saveUser();

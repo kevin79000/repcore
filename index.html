@@ -2258,9 +2258,12 @@ function drawLineChart(canvas,datasets,labels){
 function renderBilanEvolution(c){
   const bilans=c.bilans||[];
   const maxB=15;
-  const height=parseFloat(c._evol_height||c['init-height']||c['deb-height']||0);
-  const gender=c.gender||'H';
-  const isFemale=/^[fF]/.test(String(gender));
+  // Height: chercher dans le profil puis dans le bilan de départ
+  const deb=bilans.find(b=>b.type==='depart');
+  const height=parseFloat(c._evol_height||c['init-height']||deb?.['deb-height']||c['deb-height']||0);
+  // Gender: 'femme' / 'homme' / 'H' / 'F'
+  const gender=c._evol_gender||c.gender||'H';
+  const isFemale=/^[fFf]/.test(String(gender))||String(gender).toLowerCase()==='femme';
 
   // Measurements list
   const MEAS=[

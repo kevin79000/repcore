@@ -2247,6 +2247,27 @@ function viewClientBilans(){
   go('s-coach-bilan-evo');
 }
 
+function addBilanPhoto(bilanDate,bilanType,view,inputEl){
+  const file=inputEl.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const users=DB.get('users')||{};
+    const cl=Object.values(users).find(u=>u.id===currentClientId);
+    if(!cl)return;
+    const bil=cl.bilans?.find(b=>b.date===bilanDate&&b.type===bilanType);
+    if(!bil)return;
+    const prefix=bilanType==='depart'?'deb':'bil';
+    bil[prefix+'-photo-'+view]=e.target.result;
+    users[cl.email]=cl;
+    DB.set('users',users);
+    CLOUD.push(users);
+    toast('Photo ajoutée','var(--green)');
+    renderBilanEvolution(cl);
+  };
+  reader.readAsDataURL(file);
+}
+
 function drawLineChart(canvas,datasets,labels){
   if(!canvas)return;
   const W=canvas.width=canvas.parentElement.offsetWidth||300,H=canvas.height=160;
@@ -2479,11 +2500,13 @@ function renderBilanEvolution(c){
               <img src="${img}" style="width:110px;height:160px;object-fit:cover;display:block">
               <div style="padding:5px 6px;font-size:9px;color:#888;font-weight:700;text-align:center">${date}</div>
             </div>`
-          :`<div style="flex-shrink:0;width:110px;border-radius:10px;background:#1a1a1a;border:1px dashed #444;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:180px">
-              <div style="font-size:22px;opacity:.4">📷</div>
-              <div style="font-size:10px;color:#666;font-weight:700">B${i+1}</div>
-              <div style="font-size:9px;color:#555">${date}</div>
-            </div>`;
+          :`<label style="flex-shrink:0;width:110px;border-radius:10px;background:#1a1a1a;border:1px dashed #e53935;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:180px;cursor:pointer">
+              <input type="file" accept="image/*" style="display:none" onchange="addBilanPhoto(${b.date},'${b.type}','${v.k}',this)">
+              <div style="font-size:26px;opacity:.5">📷</div>
+              <div style="font-size:10px;color:#aaa;font-weight:700">B${i+1}</div>
+              <div style="font-size:9px;color:#888">${date}</div>
+              <div style="font-size:8px;color:#e53935;text-transform:uppercase;letter-spacing:1px;margin-top:2px">+ Ajouter</div>
+            </label>`;
       }).join('');
       return `<div style="margin-bottom:20px">
         <div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:6px">

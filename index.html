@@ -2423,25 +2423,49 @@ function renderBilanEvolution(c){
   // ── Photos évolution ──────────────────────────────────────────────
   const buildPhotos=()=>{
     const getP=(b,t)=>b['bil-photo-'+t]||b['deb-photo-'+t]||null;
-    const VIEWS=[{k:'face',label:'De Face'},{k:'back',label:'De Dos'},{k:'side',label:'De Profil'}];
-    const hasAny=bilans.some(b=>VIEWS.some(v=>getP(b,v.k)));
-    if(!hasAny)return'';
-    const thS='background:#111;color:#777;font-size:9px;font-weight:800;padding:5px 8px;text-align:center;border:1px solid #1a1a1a;white-space:nowrap;';
-    let th=`<th style="${thS}">PHOTOS</th>`;
-    for(let i=0;i<maxB;i++) th+=`<th style="${thS}">Bilan ${i+1}</th>`;
-    const rows=VIEWS.map(v=>{
-      let td=`<td style="background:#111;color:#777;font-size:9px;font-weight:800;padding:5px 8px;text-align:center;border:1px solid #1a1a1a;">${v.label}</td>`;
-      for(let i=0;i<maxB;i++){
-        const b=bilans[i];
-        const img=b?getP(b,v.k):null;
-        td+=img
-          ?`<td style="border:1px solid #1a1a1a;padding:2px;"><img src="${img}" style="width:64px;height:90px;object-fit:cover;display:block;border-radius:3px"></td>`
-          :`<td style="background:#0a0a0a;border:1px solid #1a1a1a;width:68px;height:94px;"></td>`;
-      }
-      return `<tr>${td}</tr>`;
+    const VIEWS=[
+      {k:'face',label:'De Face',icon:'🧍'},
+      {k:'back',label:'De Dos',icon:'🔙'},
+      {k:'side',label:'De Profil',icon:'↔️'}
+    ];
+    const bilanPhotos=bilans.map((b,i)=>({
+      b,i,
+      date:new Date(b.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'2-digit'}),
+      photos:{face:getP(b,'face'),back:getP(b,'back'),side:getP(b,'side')}
+    })).filter(x=>x.photos.face||x.photos.back||x.photos.side);
+    if(!bilanPhotos.length)return'';
+
+    const viewSections=VIEWS.map(v=>{
+      const cards=bilanPhotos.map(({b,i,date,photos})=>{
+        const img=photos[v.k];
+        return img
+          ?`<div onclick="openPhotoFull(this.querySelector('img').src,'${c.fname} — ${v.label} — Bilan ${i+1} (${date})')"
+              style="flex-shrink:0;cursor:pointer;position:relative;border-radius:10px;overflow:hidden;background:#111;border:1px solid #222;width:110px">
+              <div style="position:absolute;top:6px;left:6px;background:#000b;color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:1px;z-index:1">B${i+1}</div>
+              <img src="${img}" style="width:110px;height:160px;object-fit:cover;display:block">
+              <div style="padding:5px 6px;font-size:9px;color:#666;font-weight:700;text-align:center">${date}</div>
+            </div>`
+          :`<div style="flex-shrink:0;width:110px;border-radius:10px;background:#0a0a0a;border:1px dashed #1e1e1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;height:180px">
+              <div style="font-size:22px;opacity:.15">📷</div>
+              <div style="font-size:9px;color:#333;font-weight:700">B${i+1}</div>
+            </div>`;
+      }).join('');
+      return `<div style="margin-bottom:20px">
+        <div style="font-size:10px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;display:flex;align-items:center;gap:6px">
+          <span>${v.icon}</span><span>${v.label}</span>
+        </div>
+        <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px">${cards}</div>
+      </div>`;
     }).join('');
-    return `<div style="margin-top:8px;margin-bottom:8px;font-size:10px;font-weight:800;color:#e53935;text-align:center;text-transform:uppercase;letter-spacing:2px">Photos Évolution</div>
-      <div style="overflow-x:auto;margin-bottom:24px"><table style="border-collapse:collapse"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>`;
+
+    return `<div style="margin-top:4px;margin-bottom:28px">
+      <div style="font-size:11px;font-weight:800;color:#e53935;text-align:center;text-transform:uppercase;letter-spacing:3px;margin-bottom:18px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <div style="height:1px;background:#e5393533;flex:1"></div>
+        FRESQUE ÉVOLUTION
+        <div style="height:1px;background:#e5393533;flex:1"></div>
+      </div>
+      ${viewSections}
+    </div>`;
   };
 
   // ── Assemble HTML ─────────────────────────────────────────────────

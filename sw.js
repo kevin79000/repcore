@@ -1,6 +1,6 @@
-const CACHE = 'repcore-v102';
+const CACHE = 'repcore-v103';
 const SW_DATA = 'repcore-sw-data'; // persistent across updates — not wiped by activate
-const ASSETS = ['./manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png', './icons/dumbbell.png'];
+const ASSETS = ['./manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

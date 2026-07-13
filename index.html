@@ -732,7 +732,7 @@ const COACH_PHOTO='icons/coach.jpg';
         </div>
 
         <h2 style="margin-bottom:4px">Monétisation</h2>
-        <p class="sub" style="font-size:12px;margin-bottom:20px">Tes élèves avec un code affilié paient 9,99€/mois à RepCore. Tu peux suivre leur statut d'abonnement ici.</p>
+        <p class="sub" style="font-size:12px;margin-bottom:20px">Tes élèves avec un code affilié paient 9,95€/mois à RepCore. Tu peux suivre leur statut d'abonnement ici.</p>
 
         <!-- PayPal config -->
         <div id="pp-config-section" style="background:#0f0f0f;border:1px solid #2a0000;border-radius:14px;padding:18px;margin-bottom:20px">
@@ -748,7 +748,7 @@ const COACH_PHOTO='icons/coach.jpg';
             <input id="pp-client-id" placeholder="AY... (depuis developer.paypal.com)" style="font-size:11px;font-family:monospace">
           </div>
           <div style="margin-bottom:16px">
-            <label for="pp-plan-id">Plan ID abonnement 9,99EUR/mois</label>
+            <label for="pp-plan-id">Plan ID abonnement 9,95EUR/mois</label>
             <input id="pp-plan-id" placeholder="P-... (depuis PayPal Products and Plans)" style="font-size:11px;font-family:monospace">
           </div>
           <button class="btn btn-red" onclick="savePaypalSettings()" style="letter-spacing:1px">Sauvegarder la configuration</button>
@@ -757,7 +757,7 @@ const COACH_PHOTO='icons/coach.jpg';
             <strong style="color:#888;display:block;margin-bottom:6px">Comment configurer PayPal :</strong>
             1. Va sur developer.paypal.com avec ton compte guellec.coachingpro@gmail.com<br>
             2. My Apps and Credentials > Create App > copie le Client ID (commence par AY)<br>
-            3. PayPal dashboard > Products and Plans > New Plan > 9,99EUR/mois > copie le Plan ID (commence par P-)
+            3. PayPal dashboard > Products and Plans > New Plan > 9,95EUR/mois > copie le Plan ID (commence par P-)
           </div>
         </div>
 
@@ -1512,7 +1512,7 @@ const COACH_PHOTO='icons/coach.jpg';
         <div style="width:40px;height:40px;border-radius:10px;background:#1a0000;display:flex;align-items:center;justify-content:center;font-size:20px"></div>
         <div>
           <div style="font-weight:800;font-size:15px">Coaching en autonomie</div>
-          <div style="font-size:11px;color:var(--red);font-weight:700">9,99 € / mois</div>
+          <div style="font-size:11px;color:var(--red);font-weight:700">9,95 € / mois</div>
         </div>
       </div>
       <ul style="font-size:12px;color:#aaa;line-height:1.9;margin-bottom:16px;padding-left:0;list-style:none">
@@ -1525,7 +1525,7 @@ const COACH_PHOTO='icons/coach.jpg';
       <div style="width:36px;height:2px;background:var(--red);margin-bottom:16px"></div>
       <div id="sub-pending-info" style="display:none"></div>
       <div id="paypal-btn-container" style="min-height:48px">
-        <button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99€/mois →</button>
+        <button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,95€/mois →</button>
       </div>
       <p style="font-size:10px;color:#555;margin-top:10px;text-align:center">Paiement sécurisé via PayPal · Sans engagement</p>
     </div>
@@ -1983,7 +1983,7 @@ function loadAccessGate(){
   } else {
     title.textContent='Acces requis';
     sub.textContent='Tu dois activer un acces pour utiliser RepCore.';
-    block.innerHTML='<div style="font-size:12px;color:#888;line-height:1.8">Tu n&#39;as pas encore d&#39;acces actif.<br>Entre un code fourni par ton coach, ou souscris a l&#39;abonnement autonomie a 9,99EUR/mois.</div>';
+    block.innerHTML='<div style="font-size:12px;color:#888;line-height:1.8">Tu n&#39;as pas encore d&#39;acces actif.<br>Entre un code fourni par ton coach, ou souscris a l&#39;abonnement autonomie a 9,95EUR/mois.</div>';
   }
 }
 
@@ -2213,7 +2213,7 @@ async function doLinkCoach(){
       toast('Accès activé ✓');
       openBilan('depart');
     } else {
-      // Code affilié : paiement 9,99€/mois requis
+      // Code affilié : paiement 9,95€/mois requis
       sessionStorage.setItem('pendingCodePayload',JSON.stringify(payload));
       users[currentUser.email]=currentUser;
       DB.set('users',users);
@@ -5687,7 +5687,7 @@ function loadMonetisationTab(){
   const active=subs.filter(x=>x.paymentStatus==='active');
   const cancelled=subs.filter(x=>x.paymentStatus==='cancelled');
   document.getElementById('pp-total-subs').textContent=active.length;
-  document.getElementById('pp-mrr').textContent=(active.length*9.99).toFixed(2)+'€';
+  document.getElementById('pp-mrr').textContent=(active.length*9.95).toFixed(2)+'€';
   document.getElementById('pp-cancelled').textContent=cancelled.length;
   const el=document.getElementById('pp-subs-list');
   if(!subs.length){
@@ -5899,14 +5899,14 @@ function copyExistingCode(i){
 // ATHLETE: Subscribe page
 // ═══════════════════════════════════════════════════
 function loadSubscribePage(mode,payload){
-  document.getElementById('paypal-btn-container').innerHTML='<button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,99€/mois →</button>';
+  document.getElementById('paypal-btn-container').innerHTML='<button class="btn btn-red" onclick="initPaypalSubscription()" id="paypal-loading-btn">Souscrire pour 9,95€/mois →</button>';
   const codeOpt=document.getElementById('sub-code-option');
   const pendingInfo=document.getElementById('sub-pending-info');
   if(mode==='pending-code'&&payload){
     if(codeOpt) codeOpt.style.display='none';
     if(pendingInfo){
       pendingInfo.style.display='';
-      pendingInfo.innerHTML='<div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;line-height:1.7"><strong style="color:var(--green)">Code validé ✓</strong><br>Coach : <strong>'+(payload.coachName||'Coach')+'</strong><br><br>Souscris pour activer ton accès RepCore (9,99€/mois).</div>';
+      pendingInfo.innerHTML='<div style="background:#0a1a0a;border:1px solid #1a3a1a;border-radius:12px;padding:14px;margin-bottom:14px;font-size:12px;line-height:1.7"><strong style="color:var(--green)">Code validé ✓</strong><br>Coach : <strong>'+(payload.coachName||'Coach')+'</strong><br><br>Souscris pour activer ton accès RepCore (9,95€/mois).</div>';
     }
   } else {
     if(codeOpt) codeOpt.style.display='';

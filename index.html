@@ -839,7 +839,7 @@ const COACH_PHOTO='icons/coach.jpg';
   <div class="scroll-area" style="flex:1">
     <div class="pad">
       <div><label for="prog-name">Nom du programme</label><input id="prog-name" placeholder="Ex: Prise de masse — Semaine 1"></div>
-      <div><label for="prog-session-sel">Séance type</label>
+      <div id="prog-session-sel-wrap"><label for="prog-session-sel">Séance type</label>
         <select id="prog-session-sel">
           <option>SÉANCE 1 : DOS & ABDOS</option><option>SÉANCE 2 : PECTORAUX & TRICEPS</option>
           <option>SÉANCE 3 : ÉPAULES & BICEPS</option><option>SÉANCE 4 : JAMBES</option>
@@ -848,7 +848,7 @@ const COACH_PHOTO='icons/coach.jpg';
       </div>
 
       <!-- ===== PDF DU PROGRAMME ===== -->
-      <div style="margin-top:20px;padding:16px;background:#0f0f0f;border:1px solid #222;border-radius:4px">
+      <div id="prog-pdf-wrap" style="margin-top:20px;padding:16px;background:#0f0f0f;border:1px solid #222;border-radius:4px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
           <div>
             <div style="font-size:9px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase;margin-bottom:2px">Programme PDF</div>
@@ -3067,6 +3067,14 @@ function openCoachProgram(){
   const acts=document.getElementById('prog-photo-actions');
   if(progPhotoData){img.src=progPhotoData;img.style.display='block';ph.style.display='none';if(acts)acts.style.display='flex';}
   else{img.style.display='none';ph.style.display='block';if(acts)acts.style.display='none';}
+  // Sections coach toujours visibles quand c'est le coach qui ouvre
+  ['prog-session-sel-wrap','prog-pdf-wrap'].forEach(id=>{
+    const el=document.getElementById(id);if(el) el.style.display='';
+  });
+  const backBtn=document.querySelector('#s-coach-program .back-btn');
+  if(backBtn) backBtn.onclick=()=>go('s-coach-client');
+  const title=document.querySelector('#s-coach-program .topbar-title');
+  if(title) title.textContent='Programme';
   // PDF programme
   refreshPdfUI(c);
   renderProgEx();go('s-coach-program');
@@ -3514,7 +3522,7 @@ function openSessionExercises(idx){
   if(!cfg[idx]) return;
   if(!Array.isArray(cfg[idx].exercises)) cfg[idx].exercises=[];
   progEx=JSON.parse(JSON.stringify(cfg[idx].exercises));
-  document.getElementById('prog-name').value=cfg[idx].name;
+  document.getElementById('prog-name').value=cfg[idx].name||'';
   document.getElementById('prog-notes').value=cfg[idx].notes||'';
   document.getElementById('prog-warmup').value=cfg[idx].warmup??currentUser._defaultWarmup??'';
   document.getElementById('prog-cooldown').value=cfg[idx].cooldown??currentUser._defaultCooldown??'';
@@ -3522,9 +3530,28 @@ function openSessionExercises(idx){
   const img=document.getElementById('prog-photo-preview');
   if(progPhotoData){img.src=progPhotoData;img.style.display='block';document.getElementById('prog-photo-ph').style.display='none';}
   else{img.style.display='none';document.getElementById('prog-photo-ph').style.display='block';}
-  // Save context: editing session idx
   window._editingSessionIdx=idx;
-  renderProgEx();go('s-coach-program');
+
+  // Adapter le screen pour la vue athlète
+  const backBtn=document.querySelector('#s-coach-program .back-btn');
+  if(backBtn) backBtn.onclick=()=>go('s-session-manager');
+  const title=document.querySelector('#s-coach-program .topbar-title');
+  if(title) title.textContent=(cfg[idx].name||'Séance')+' — Exercices';
+  // Masquer sections réservées au coach
+  ['prog-session-sel-wrap','prog-pdf-wrap'].forEach(id=>{
+    const el=document.getElementById(id);if(el) el.style.display='none';
+  });
+
+  renderProgEx();
+  go('s-coach-program');
+  // Scroll immédiat sur la section Exercices
+  setTimeout(()=>{
+    const scrollArea=document.querySelector('#s-coach-program .scroll-area');
+    const exHeader=document.querySelector('#s-coach-program .exo-chip');
+    if(scrollArea&&exHeader){
+      scrollArea.scrollTop=exHeader.closest('div')?.offsetTop-16||0;
+    }
+  },80);
 }
 
 function openSessionPicker(){

@@ -1993,8 +1993,13 @@ window.onload=()=>{
           silentLogout();
           go('s-welcome');
         } else {
-          // Push avec _st au démarrage → tous les appareils reçoivent le token via cloud
-          try{if(CLOUD.canWrite()) saveUser();}catch(e){}
+          // Re-auth silencieux si pas de token Firebase (comptes créés avant le fix await)
+          if(!CLOUD.canWrite()){
+            const stored=(DB.get('users')||{})[currentUser.email];
+            if(stored?.pwd) CLOUD.signIn(currentUser.email,stored.pwd).then(()=>{if(CLOUD.canWrite())saveUser();}).catch(()=>{});
+          } else {
+            try{saveUser();}catch(e){}
+          }
           routeUser();
         }
       } else if(window._importedCoach){
@@ -2152,7 +2157,7 @@ async function doLogin(){
       synced=DB.get('users')||{};
       u=synced[em];
     }
-    if(!u) return showErr('l-err','Mot de passe correct mais données cloud introuvables. Ouvre l\'app sur ton appareil habituel pour les synchroniser, puis réessaie ici.');
+    if(!u) return rescueLogin(em,pw);
     u.pwd=pw;synced[em]=u;DB.set('users',synced);
     currentUser=u;DB.set('session',currentUser);
     if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){go('s-client-code');return;}
@@ -2174,6 +2179,51 @@ async function doLogin(){
     return;
   }
   routeUser();
+}
+function rescueLogin(em,pw){
+  // Firebase Auth OK mais RTDB vide — créer un profil minimal avec sélection du rôle
+  const existing=document.getElementById('rescue-panel');
+  if(existing) existing.remove();
+  const panel=document.createElement('div');
+  panel.id='rescue-panel';
+  panel.style.cssText='position:fixed;inset:0;background:#000d;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  panel.innerHTML=`
+    <div style="background:#161616;border:1px solid #2a2a2a;border-radius:20px;padding:28px 24px;max-width:340px;width:100%;text-align:center">
+      <div style="font-size:28px;margin-bottom:12px">✅</div>
+      <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Mot de passe reconnu</div>
+      <p style="font-size:12px;color:#888;line-height:1.6;margin-bottom:20px">Tes données cloud ne sont pas encore synchronisées. Indique ton rôle pour continuer — elles se restaureront automatiquement à la prochaine ouverture sur ton appareil habituel.</p>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <button onclick="doRescue('${em}','${encodeURIComponent(pw)}','coach')"
+          style="flex:1;background:#1a0000;border:1.5px solid var(--red);color:#fff;padding:14px 8px;border-radius:10px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:800;font-size:12px;letter-spacing:1px">
+          🏋️ COACH
+        </button>
+        <button onclick="doRescue('${em}','${encodeURIComponent(pw)}','athlete')"
+          style="flex:1;background:#0a1a0a;border:1.5px solid #22c55e;color:#fff;padding:14px 8px;border-radius:10px;cursor:pointer;font-family:Montserrat,sans-serif;font-weight:800;font-size:12px;letter-spacing:1px">
+          💪 ATHLÈTE
+        </button>
+      </div>
+      <button onclick="document.getElementById('rescue-panel').remove()"
+        style="background:none;border:none;color:#555;font-size:11px;cursor:pointer;font-family:Montserrat,sans-serif">Annuler</button>
+    </div>`;
+  document.body.appendChild(panel);
+}
+function doRescue(em,pwEnc,role){
+  const pw=decodeURIComponent(pwEnc);
+  const users=DB.get('users')||{};
+  const uid='u_'+Date.now();
+  const fname=em.split('@')[0];
+  const user={id:uid,fname,lname:'',email:em,pwd:pw,role,
+    createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],
+    coachId:null,coachName:null,
+    status:role==='coach'?'COACHING_SUIVI':'FREE',
+    accessExpiry:null,paymentStatus:null,paypalSubscriptionId:null};
+  if(role==='coach'){user.code=genCode();user.clients=[];}
+  users[em]=user;DB.set('users',users);
+  currentUser=user;DB.set('session',user);
+  document.getElementById('rescue-panel')?.remove();
+  CLOUD.signIn(em,pw).then(()=>{if(CLOUD.canWrite()) saveUser();}).catch(()=>{});
+  if(role==='coach'){document.getElementById('coach-code-val').textContent=user.code;go('s-coach-code');}
+  else{go('s-client-code');}
 }
 async function forgotPassword(){
   const em=(document.getElementById('l-email')?.value||'').trim().toLowerCase();

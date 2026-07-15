@@ -516,7 +516,7 @@ const COACH_PHOTO='icons/coach.jpg';
     <div id="l-err" style="color:#f87171;font-size:13px;display:none"></div>
     <button class="btn btn-red" style="margin-top:8px;letter-spacing:2px" onclick="doLogin()">SE CONNECTER</button>
     <p class="sub" style="text-align:center;margin-top:12px"><span style="cursor:pointer;font-size:12px;color:#555;text-decoration:underline;text-decoration-color:#333" onclick="forgotPassword()">Mot de passe oublié ?</span></p>
-    <p class="sub" style="text-align:center;margin-top:8px">Pas de compte ? <span class="red" style="cursor:pointer;font-weight:700" onclick="go('s-register')">Créer un compte</span></p>
+    <p class="sub" style="text-align:center;margin-top:8px">Pas de compte ? <span class="red" style="cursor:pointer;font-weight:700" onclick="goRegisterAthlete()">Créer un compte</span></p>
   </div>
   
 </div>
@@ -2244,8 +2244,11 @@ async function forgotPassword(){
 function showErr(id,msg){const e=document.getElementById(id);e.textContent=msg;e.style.display='block';}
 function goRegisterCoach(){
   go('s-register');
-  // Pré-sélectionner le rôle coach
   setTimeout(()=>selectRole('coach'),50);
+}
+function goRegisterAthlete(){
+  go('s-register');
+  setTimeout(()=>selectRole('athlete'),50);
 }
 function aeToggleCode(){
   const zone=document.getElementById('ae-code-zone');

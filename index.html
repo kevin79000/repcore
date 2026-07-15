@@ -3393,6 +3393,19 @@ const DAY_ICONS=['L','Ma','Me','J','V','S','D'];
 function loadSessionManager(){
   go('s-session-manager');
   if(!currentUser.sessions_config) initSessionsConfig();
+  // Migration : garantir 7 slots avec toutes les propriétés requises
+  let changed=false;
+  DAYS.forEach((day,i)=>{
+    if(!currentUser.sessions_config[i]){
+      currentUser.sessions_config[i]={day,name:'',photo:null,exercises:[],active:false,notes:''};
+      changed=true;
+    }
+    if(!Array.isArray(currentUser.sessions_config[i].exercises)){
+      currentUser.sessions_config[i].exercises=[];
+      changed=true;
+    }
+  });
+  if(changed) saveUser();
   const sessions=currentUser.sessions_config;
   const container=document.getElementById('session-slots');
 
@@ -3498,6 +3511,8 @@ function uploadSessionPhoto(idx,input){
 
 function openSessionExercises(idx){
   const cfg=currentUser.sessions_config||initSessionsConfig();
+  if(!cfg[idx]) return;
+  if(!Array.isArray(cfg[idx].exercises)) cfg[idx].exercises=[];
   progEx=JSON.parse(JSON.stringify(cfg[idx].exercises));
   document.getElementById('prog-name').value=cfg[idx].name;
   document.getElementById('prog-notes').value=cfg[idx].notes||'';

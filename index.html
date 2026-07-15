@@ -2095,7 +2095,7 @@ function selectRole(r){
   document.getElementById('role-coach').classList.toggle('sel',r==='coach');
   document.getElementById('role-athlete').classList.toggle('sel',r==='athlete');
 }
-function doRegister(){
+async function doRegister(){
   const fn=v('r-fname'),ln=v('r-lname'),em=v('r-email').toLowerCase(),pw=v('r-pwd'),pw2=v('r-pwd2'),gn=v('r-gender');
   const err=document.getElementById('r-err');err.style.display='none';
   if(!fn||!ln||!em||!pw){return showErr('r-err','Tous les champs sont obligatoires.');}
@@ -2112,9 +2112,10 @@ function doRegister(){
     createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],coachId:null,coachName:null,
     status:'FREE',accessExpiry:null,paymentStatus:null,paypalSubscriptionId:null};
   if(selRole==='coach'){user.code=genCode();user.clients=[];}
+  // Authentifier Firebase AVANT de sauvegarder → le push 2s plus tard aura un token valide
+  await CLOUD.signIn(em,pw);
   users[em]=user;DB.set('users',users);
   currentUser=user;DB.set('session',user);
-  CLOUD.signIn(em,pw);
   if(selRole==='coach'){
     document.getElementById('coach-code-val').textContent=user.code;
     go('s-coach-code');
@@ -2143,9 +2144,15 @@ async function doLogin(){
     if(!ok) return showErr('l-err','Email ou mot de passe incorrect.');
     toast('Récupération du compte…');
     await CLOUD.syncUser(em);
-    const synced=DB.get('users')||{};
+    let synced=DB.get('users')||{};
     u=synced[em];
-    if(!u) return showErr('l-err','Compte introuvable. Vérifie ton email ou crée un compte.');
+    if(!u){
+      // Fallback : tirer toute la table (cas où la clé individuelle n'existe pas encore en RTDB)
+      await CLOUD.syncUsers();
+      synced=DB.get('users')||{};
+      u=synced[em];
+    }
+    if(!u) return showErr('l-err','Mot de passe correct mais données cloud introuvables. Ouvre l\'app sur ton appareil habituel pour les synchroniser, puis réessaie ici.');
     u.pwd=pw;synced[em]=u;DB.set('users',synced);
     currentUser=u;DB.set('session',currentUser);
     if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){go('s-client-code');return;}
@@ -2161,7 +2168,7 @@ async function doLogin(){
     u.pwd=pw;users[em]=u;DB.set('users',users);
   }
   currentUser=users[em];DB.set('session',currentUser);
-  CLOUD.signIn(em,pw);
+  CLOUD.signIn(em,pw).then(()=>{if(CLOUD.canWrite()) saveUser();}).catch(()=>{});
   if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){
     go('s-client-code');
     return;

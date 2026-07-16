@@ -730,6 +730,28 @@ const COACH_PHOTO='icons/coach.jpg';
       <div class="pad">
         <div style="width:20px;height:2px;background:var(--red);margin-bottom:8px;margin-top:4px"></div>
 
+        <!-- 🏷️ Identité coach / team -->
+        <div style="background:#100018;border:1px solid #2a1a3a;border-radius:14px;padding:18px;margin-bottom:18px">
+          <div style="font-size:9px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase;margin-bottom:14px">Identité de la team</div>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+            <label style="cursor:pointer;flex-shrink:0">
+              <div id="coach-photo-circle" style="width:72px;height:72px;border-radius:50%;background:#1e1028;border:2px solid #3a1a5a;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden">👤</div>
+              <div style="text-align:center;font-size:9px;color:#555;margin-top:5px;letter-spacing:1px">PHOTO</div>
+              <input type="file" accept="image/*" style="display:none" onchange="uploadCoachPhoto(this)">
+            </label>
+            <div style="flex:1;font-size:11px;color:var(--sub);line-height:1.6">Photo du coach<br>visible par tes athlètes sur leur accueil</div>
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px">Nom de la team</label>
+            <input id="coach-team-name" type="text" placeholder="ex: TEAM RIPPED" maxlength="40" style="width:100%;font-size:14px;padding:11px 14px;box-sizing:border-box">
+          </div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px">Phrase d'accroche</label>
+            <input id="coach-catchphrase" type="text" placeholder="ex: Chaque rep compte. Chaque jour compte." maxlength="100" style="width:100%;font-size:13px;padding:11px 14px;box-sizing:border-box">
+          </div>
+          <button onclick="saveCoachIdentity()" style="width:100%;background:var(--red);border:none;color:#fff;border-radius:3px;padding:12px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1.5px">ENREGISTRER</button>
+        </div>
+
         <!-- 📱 WhatsApp coach -->
         <div style="background:#071a07;border:1px solid #1a3a1a;border-radius:14px;padding:18px;margin-bottom:18px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -841,13 +863,16 @@ const COACH_PHOTO='icons/coach.jpg';
   <div class="topbar"><button class="back-btn" onclick="go('s-coach-home');loadCoachHome()">←</button><span class="topbar-title" id="ccd-title">Athlète</span><span></span></div>
   <div class="scroll-area" style="flex:1">
     <div class="pad">
-      <div class="card row" style="margin-bottom:16px;gap:14px">
-        <div class="avatar" style="width:56px;height:56px;font-size:20px" id="ccd-avatar"></div>
-        <div style="flex:1">
-          <div style="font-weight:800;font-size:16px" id="ccd-name"></div>
-          <div class="sub" style="font-size:12px" id="ccd-info"></div>
-          <div style="margin-top:6px" id="ccd-badge"></div>
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+          <div id="ccd-avatar" style="width:64px;height:64px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:16px;margin-bottom:2px" id="ccd-name"></div>
+            <div class="sub" style="font-size:11px;margin-bottom:6px" id="ccd-info"></div>
+            <div id="ccd-badge"></div>
+          </div>
         </div>
+        <div id="ccd-profile-details" style="display:none;border-top:1px solid #1a1a1a;padding-top:10px;flex-wrap:wrap;gap:10px"></div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:16px">
         <div class="metric-box"><div class="metric-val" id="ccd-streak">0</div><div class="metric-label">Streak</div></div>
@@ -1051,10 +1076,10 @@ const COACH_PHOTO='icons/coach.jpg';
 <div id="s-client-home" class="screen">
   <!-- Brand header athlete -->
   <div style="background:#090909;border-bottom:1px solid var(--red);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-    <div style="display:flex;align-items:center;gap:10px">
-      <img src="./icons/logo.png" style="display:block;width:52px;height:52px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="openAthleteProfile()">
+      <div id="clh-athlete-avatar" style="width:48px;height:48px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;flex-shrink:0">👤</div>
       <div>
-        <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">ATHLETE</div>
+        <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">MON PROFIL</div>
         <div style="font-size:14px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:1px;line-height:1" id="clh-name"></div>
       </div>
     </div>
@@ -1076,6 +1101,9 @@ const COACH_PHOTO='icons/coach.jpg';
         <p class="sub" id="clh-coach" style="margin-top:2px;font-size:11px;letter-spacing:.5px;text-transform:uppercase"></p>
         <a id="clh-contact-link" href="#" target="_blank" rel="noopener" style="display:none;font-size:11px;color:var(--red);font-weight:700;letter-spacing:.5px;margin-top:6px;text-decoration:none;align-items:center;gap:5px">💬 Un souci ? Contacte ton coach</a>
       </div>
+
+      <!-- COACH BANNER -->
+      <div id="clh-coach-banner" style="display:none;margin-bottom:18px"></div>
 
       <!-- STATS -->
       <div style="display:flex;gap:8px;margin-bottom:20px">
@@ -1171,6 +1199,49 @@ const COACH_PHOTO='icons/coach.jpg';
     <button class="tab-btn" onclick="clientTab('evolution',this)">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>Évolution
     </button>
+  </div>
+</div>
+
+<!-- ATHLETE PROFILE EDITOR -->
+<div id="s-athlete-profile" class="screen">
+  <div class="topbar">
+    <button class="back-btn" onclick="go('s-client-home')">←</button>
+    <span class="topbar-title">Mon profil</span>
+    <button onclick="saveAthleteProfile()" style="background:var(--red);border:none;color:#fff;padding:7px 16px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;border-radius:3px">SAUVEGARDER</button>
+  </div>
+  <div class="scroll-area" style="flex:1">
+    <div class="pad">
+      <div style="display:flex;justify-content:center;margin-bottom:24px;margin-top:8px">
+        <label style="cursor:pointer;text-align:center">
+          <div id="atp-photo-circle" style="width:90px;height:90px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;margin:0 auto">👤</div>
+          <div style="font-size:9px;color:var(--sub);margin-top:8px;letter-spacing:1.5px;text-transform:uppercase">Changer la photo</div>
+          <input type="file" accept="image/*" style="display:none" onchange="uploadAthletePhoto(this)">
+        </label>
+      </div>
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;gap:12px;margin-bottom:14px">
+          <div style="flex:1">
+            <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Âge</label>
+            <input id="atp-age" type="number" min="10" max="99" placeholder="25" style="width:100%;font-size:16px;padding:11px 14px;box-sizing:border-box">
+          </div>
+          <div style="flex:1">
+            <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:6px">Poids (kg)</label>
+            <input id="atp-weight" type="number" min="30" max="300" step="0.1" placeholder="70" style="width:100%;font-size:16px;padding:11px 14px;box-sizing:border-box">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Sexe</label>
+          <div style="display:flex;gap:8px">
+            <button id="atp-btn-m" onclick="setAthleteGender('M')" style="flex:1;padding:11px;border:1px solid var(--border);background:none;border-radius:3px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:#fff;transition:.15s">Homme</button>
+            <button id="atp-btn-f" onclick="setAthleteGender('F')" style="flex:1;padding:11px;border:1px solid var(--border);background:none;border-radius:3px;font-family:Montserrat,sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:#fff;transition:.15s">Femme</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <label style="font-size:10px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:8px">Objectif</label>
+        <textarea id="atp-objective" placeholder="ex: Prise de masse, perte de poids, remise en forme..." style="width:100%;min-height:80px;font-size:13px;padding:11px 14px;box-sizing:border-box;resize:vertical;background:#111;border:1px solid #2a2a2a;color:#fff;font-family:Montserrat,sans-serif;border-radius:4px;line-height:1.5" maxlength="200"></textarea>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2812,7 +2883,9 @@ function openClientDetail(cid,_refresh){
   if(!c) return;
 
   document.getElementById('ccd-title').textContent=c.fname;
-  document.getElementById('ccd-avatar').textContent=ini(c.fname,c.lname);
+  const _av=document.getElementById('ccd-avatar');
+  if(c.athletePhoto) _av.innerHTML=`<img src="${c.athletePhoto}" style="width:100%;height:100%;object-fit:cover">`;
+  else{_av.style.background='#1a1a1a';_av.textContent=ini(c.fname,c.lname);}
   document.getElementById('ccd-name').textContent=c.fname+' '+c.lname;
   document.getElementById('ccd-info').textContent=c._fromCode
     ?'Code généré le '+new Date(c._codeInfo.createdAt).toLocaleDateString('fr-FR')+' · Expire le '+new Date(c._codeInfo.expiry).toLocaleDateString('fr-FR')
@@ -2828,6 +2901,16 @@ function openClientDetail(cid,_refresh){
     ?'<span class="badge badge-orange">⏳ En attente d\'inscription</span>'
     :_newBil?'<span class="badge badge-orange"> Nouveau bilan</span>'
     :needsAlert(c)?'<span class="badge badge-red"> Bilan en retard</span>':isActive(c)?'<span class="badge badge-green"> Actif</span>':'<span class="badge badge-gray">Inactif</span>';
+  const _pd=document.getElementById('ccd-profile-details');
+  if(_pd){
+    const _bits=[];
+    if(c.age) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Âge</span><br><strong>${c.age} ans</strong></div>`);
+    if(c.gender) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Sexe</span><br><strong>${c.gender==='M'?'Homme':'Femme'}</strong></div>`);
+    if(c.profileWeight) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Poids</span><br><strong>${c.profileWeight} kg</strong></div>`);
+    if(c.objective) _bits.push(`<div style="font-size:11px;flex-basis:100%"><span style="color:var(--sub)">Objectif</span><br><strong>${escapeHtml(c.objective)}</strong></div>`);
+    if(_bits.length){_pd.innerHTML=_bits.join('');_pd.style.display='flex';}
+    else _pd.style.display='none';
+  }
   document.getElementById('ccd-streak').textContent=(c.streak||0)+'';
   document.getElementById('ccd-sessions').textContent=(c.sessions||[]).length;
   const lb=c.bilans?.length?c.bilans[c.bilans.length-1]:null;
@@ -3534,6 +3617,9 @@ function loadClientHome(){
   const u=currentUser;
   // clh-avatar replaced by logo badge
   document.getElementById('clh-name').textContent=u.fname+' '+u.lname;
+  // Avatar athlète
+  const avatar=document.getElementById('clh-athlete-avatar');
+  if(avatar) avatar.innerHTML=u.athletePhoto?`<img src="${u.athletePhoto}" style="width:100%;height:100%;object-fit:cover">`:ini(u.fname,u.lname);
   const coachEl=document.getElementById('clh-coach');
   if(u.coachName){
     coachEl.innerHTML=`Coach: ${u.coachName}`;
@@ -3569,19 +3655,39 @@ function loadClientHome(){
   }
   const contactLink=document.getElementById('clh-contact-link');
   if(contactLink&&u.coachId){
-    const _applyCoachLink=(usrs)=>{
+    const _applyCoachData=(usrs)=>{
       const coachUser=Object.values(usrs).find(x=>x.id===u.coachId);
       const coachEmail=Object.keys(usrs).find(k=>usrs[k]?.id===u.coachId);
       const phone=(coachUser?.phone||'').replace(/\D/g,'');
       const href=phone?'https://wa.me/'+phone:(coachEmail?'mailto:'+coachEmail:'');
       if(href){contactLink.href=href;contactLink.style.display='inline-flex';}
+      _renderCoachBanner(coachUser);
     };
-    _applyCoachLink(users);
-    // Sync coach profile in background to get fresh phone number
+    _applyCoachData(users);
     if(CLOUD.ok()){
       const coachEmail=Object.keys(users).find(k=>users[k]?.id===u.coachId);
-      if(coachEmail) CLOUD.syncUser(coachEmail).then(()=>_applyCoachLink(DB.get('users')||{})).catch(()=>{});
+      if(coachEmail) CLOUD.syncUser(coachEmail).then(()=>_applyCoachData(DB.get('users')||{})).catch(()=>{});
     }
+  }
+  function _renderCoachBanner(coach){
+    const el=document.getElementById('clh-coach-banner');
+    if(!el) return;
+    if(!coach){el.style.display='none';return;}
+    const team=coach.teamName||'';
+    const name=(coach.fname||'')+' '+(coach.lname||'');
+    const phrase=coach.catchphrase||'';
+    const photo=coach.coachPhoto||'';
+    if(!team&&!phrase&&!photo){el.style.display='none';return;}
+    el.style.display='block';
+    el.innerHTML=`<div style="background:#0d0a14;border:1px solid #2a1a4a;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px">
+      ${photo?`<img src="${photo}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0;border:2px solid #3a1a5a">`
+        :`<div style="width:52px;height:52px;border-radius:50%;background:#1e1028;border:2px solid #2a1a4a;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🏋️</div>`}
+      <div style="flex:1;min-width:0">
+        ${team?`<div style="font-size:8px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase;margin-bottom:2px">${escapeHtml(team)}</div>`:''}
+        <div style="font-size:13px;font-weight:800;margin-bottom:${phrase?'4':'0'}px">${escapeHtml(name.trim())}</div>
+        ${phrase?`<div style="font-size:11px;color:var(--sub);font-style:italic;line-height:1.5">"${escapeHtml(phrase)}"</div>`:''}
+      </div>
+    </div>`;
   }
   const progEl=document.getElementById('clh-prog-exercises');
   if(progEl) _renderProgExercisesInto(progEl);
@@ -6943,6 +7049,90 @@ function saveCoachPhone(){
   toast('Numéro WhatsApp enregistré ✓');
   _renderCoachPhonePreview(raw);
 }
+function _resizeImage(file,maxW,maxH,quality){
+  return new Promise(resolve=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const sc=Math.min(maxW/img.width,maxH/img.height,1);
+        const cv=document.createElement('canvas');
+        cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        resolve(cv.toDataURL('image/jpeg',quality||0.75));
+      };
+      img.onerror=()=>resolve(null);
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+function uploadCoachPhoto(input){
+  const f=input.files[0];if(!f) return;
+  if(f.size>3*1024*1024){toast('Image trop lourde (max 3 Mo)','var(--orange)');return;}
+  _resizeImage(f,200,200,0.80).then(b64=>{
+    if(!b64) return;
+    currentUser.coachPhoto=b64;
+    saveUser();
+    const el=document.getElementById('coach-photo-circle');
+    if(el) el.innerHTML=`<img src="${b64}" style="width:100%;height:100%;object-fit:cover">`;
+    toast('Photo enregistrée ✓');
+  });
+}
+function saveCoachIdentity(){
+  const name=(document.getElementById('coach-team-name')?.value||'').trim();
+  const phrase=(document.getElementById('coach-catchphrase')?.value||'').trim();
+  currentUser.teamName=name;
+  currentUser.catchphrase=phrase;
+  saveUser();
+  toast('Identité de la team enregistrée ✓');
+}
+function uploadAthletePhoto(input){
+  const f=input.files[0];if(!f) return;
+  if(f.size>3*1024*1024){toast('Image trop lourde (max 3 Mo)','var(--orange)');return;}
+  _resizeImage(f,300,300,0.80).then(b64=>{
+    if(!b64) return;
+    currentUser.athletePhoto=b64;
+    saveUser();
+    const circle=document.getElementById('atp-photo-circle');
+    if(circle) circle.innerHTML=`<img src="${b64}" style="width:100%;height:100%;object-fit:cover">`;
+    const avatar=document.getElementById('clh-athlete-avatar');
+    if(avatar) avatar.innerHTML=`<img src="${b64}" style="width:100%;height:100%;object-fit:cover">`;
+    toast('Photo enregistrée ✓');
+  });
+}
+let _atpGender='';
+function setAthleteGender(g){
+  _atpGender=g;
+  const bm=document.getElementById('atp-btn-m');
+  const bf=document.getElementById('atp-btn-f');
+  if(bm){bm.style.background=g==='M'?'var(--red)':'none';bm.style.borderColor=g==='M'?'var(--red)':'var(--border)';}
+  if(bf){bf.style.background=g==='F'?'var(--red)':'none';bf.style.borderColor=g==='F'?'var(--red)':'var(--border)';}
+}
+function openAthleteProfile(){
+  const u=currentUser;
+  const circle=document.getElementById('atp-photo-circle');
+  if(circle) circle.innerHTML=u.athletePhoto?`<img src="${u.athletePhoto}" style="width:100%;height:100%;object-fit:cover">`:'👤';
+  const ageEl=document.getElementById('atp-age');
+  if(ageEl) ageEl.value=u.age||'';
+  const wtEl=document.getElementById('atp-weight');
+  if(wtEl) wtEl.value=u.profileWeight||'';
+  const objEl=document.getElementById('atp-objective');
+  if(objEl) objEl.value=u.objective||'';
+  _atpGender=u.gender||'';
+  setAthleteGender(_atpGender);
+  go('s-athlete-profile');
+}
+function saveAthleteProfile(){
+  currentUser.age=parseInt(document.getElementById('atp-age')?.value)||undefined;
+  currentUser.profileWeight=parseFloat(document.getElementById('atp-weight')?.value)||undefined;
+  currentUser.gender=_atpGender||currentUser.gender;
+  currentUser.objective=(document.getElementById('atp-objective')?.value||'').trim()||undefined;
+  saveUser();
+  toast('Profil enregistré ✓');
+  go('s-client-home');
+  loadClientHome();
+}
 function _renderCoachPhonePreview(raw){
   const digits=(raw||'').replace(/\D/g,'');
   const el=document.getElementById('coach-phone-preview');
@@ -6974,6 +7164,13 @@ function saveCloudinaryConfig(){
 function loadMonetisationTab(){
   updateCloudStatus();
   const u=currentUser;
+  // Identité coach
+  const photoCircle=document.getElementById('coach-photo-circle');
+  if(photoCircle) photoCircle.innerHTML=u.coachPhoto?`<img src="${u.coachPhoto}" style="width:100%;height:100%;object-fit:cover">`:'👤';
+  const teamNameEl=document.getElementById('coach-team-name');
+  if(teamNameEl) teamNameEl.value=u.teamName||'';
+  const catchEl=document.getElementById('coach-catchphrase');
+  if(catchEl) catchEl.value=u.catchphrase||'';
   const phoneInput=document.getElementById('coach-phone-input');
   if(phoneInput) phoneInput.value=u.phone||'';
   _renderCoachPhonePreview(u.phone||'');

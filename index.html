@@ -6726,15 +6726,14 @@ function safeUrl(u){if(!u)return'#';return/^https?:\/\//i.test(u)?u:'#';}
 function ago(ts){const d=Math.floor((Date.now()-ts)/864e5);return d===0?"aujourd'hui":d===1?"hier":"il y a "+d+"j";}
 function saveUser(){
   currentUser.updatedAt=Date.now();
-  // Nettoyer les anciens champs token (jamais dans le cloud)
   delete currentUser._st;delete currentUser._stb64;delete currentUser._sk;
   const users=DB.get('users')||{};
   users[currentUser.email]=currentUser;
   DB.set('users',users);
   DB.set('session',currentUser);
-  // Si le token Firebase a expiré ou n'existe pas, re-authentifier silencieusement
-  // avant que _doPush (debounced 2s) ne s'exécute, pour garantir l'envoi des données
-  if(!CLOUD.canWrite()&&currentUser.pwd){
+  if(CLOUD.canWrite()){
+    CLOUD.push(users);
+  } else if(currentUser.pwd){
     CLOUD.signIn(currentUser.email,currentUser.pwd)
       .then(()=>{if(CLOUD.canWrite()) CLOUD.push(DB.get('users')||{});})
       .catch(()=>{});

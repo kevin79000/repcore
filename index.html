@@ -3729,7 +3729,7 @@ function loadClientHome(){
   renderNutriDots();renderNotifs();renderWoReminderCard();
   const _hasDepart=(currentUser.bilans||[]).some(b=>b.type==='depart');
   const _firstCard=document.getElementById('clh-first-bilan-card');
-  if(_firstCard) _firstCard.style.display=(!_hasDepart&&currentUser._firstBilanPending)?'block':'none';
+  if(_firstCard) _firstCard.style.display=(!_hasDepart)?'block':'none';
   const _snap=_woLoadSnap();
   const _resumeEl=document.getElementById('clh-resume-workout');
   const _resumeName=document.getElementById('clh-resume-name');

@@ -7272,24 +7272,45 @@ function addCoachBannerRow(imageUrl, linkUrl){
   const list=document.getElementById('coach-banners-list');
   if(!list) return;
   if(list.children.length>=5){toast('Maximum 5 bannières','var(--orange)');return;}
+  const n=list.children.length+1;
   const row=document.createElement('div');
-  row.style.cssText='background:#0f0f1f;border:1px solid #2a2a4a;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px';
-  row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
-    <span style="font-size:10px;font-weight:800;color:#818cf8;letter-spacing:1px">BANNIÈRE ${list.children.length+1}</span>
-    <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;line-height:1">✕</button>
+  row.className='banner-row';
+  row.dataset.imageUrl=imageUrl||'';
+  row.style.cssText='background:#0f0f1f;border:1px solid #2a2a4a;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px';
+  const previewHtml=imageUrl
+    ?`<img src="${escapeHtml(imageUrl)}" style="width:100%;height:90px;object-fit:cover;border-radius:4px;display:block">`
+    :`<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#0a0a1a;border-radius:4px;font-size:11px;color:#444">📷 Ajouter une photo</div>`;
+  row.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:10px;font-weight:800;color:#818cf8;letter-spacing:1px">BANNIÈRE ${n}</span>
+    <button onclick="this.closest('.banner-row').remove()" style="background:none;border:none;color:#444;font-size:16px;cursor:pointer;line-height:1">✕</button>
   </div>
-  <input type="url" placeholder="URL image (jpg, png…)" value="${escapeHtml(imageUrl||'')}" style="width:100%;font-size:12px;padding:8px 10px;box-sizing:border-box;border-radius:3px">
-  <input type="url" placeholder="URL du lien (https://…)" value="${escapeHtml(linkUrl||'')}" style="width:100%;font-size:12px;padding:8px 10px;box-sizing:border-box;border-radius:3px">`;
+  <label style="cursor:pointer;display:block">
+    <div class="banner-preview">${previewHtml}</div>
+    <div style="text-align:center;font-size:10px;color:#555;margin-top:4px;letter-spacing:1px">APPUYER POUR CHANGER LA PHOTO</div>
+    <input type="file" accept="image/*" style="display:none" onchange="handleBannerImage(this)">
+  </label>
+  <input type="url" placeholder="URL du lien au clic (https://…)" value="${escapeHtml(linkUrl||'')}" style="width:100%;font-size:12px;padding:8px 10px;box-sizing:border-box;border-radius:3px">`;
   list.appendChild(row);
+}
+function handleBannerImage(input){
+  const f=input.files[0];if(!f) return;
+  if(f.size>2*1024*1024){toast('Image trop lourde (max 2 Mo)','var(--orange)');return;}
+  const r=new FileReader();
+  r.onload=e=>{
+    const row=input.closest('.banner-row');
+    row.dataset.imageUrl=e.target.result;
+    const prev=row.querySelector('.banner-preview');
+    if(prev) prev.innerHTML=`<img src="${e.target.result}" style="width:100%;height:90px;object-fit:cover;border-radius:4px;display:block">`;
+  };
+  r.readAsDataURL(f);
 }
 function saveCoachBanners(){
   const list=document.getElementById('coach-banners-list');
   if(!list) return;
   const banners=[];
-  Array.from(list.children).forEach(row=>{
-    const inputs=row.querySelectorAll('input[type=url]');
-    const img=(inputs[0]?.value||'').trim();
-    const url=(inputs[1]?.value||'').trim();
+  list.querySelectorAll('.banner-row').forEach(row=>{
+    const img=row.dataset.imageUrl||'';
+    const url=(row.querySelector('input[type=url]')?.value||'').trim();
     if(img||url) banners.push({imageUrl:img,linkUrl:url});
   });
   currentUser.promoBanners=banners;

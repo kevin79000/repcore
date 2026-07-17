@@ -3807,19 +3807,16 @@ function loadClientHome(){
     const photo=coach?.coachPhoto||'';
     if(!name){el.style.display='none';return;}
     el.style.display='block';
-    el.innerHTML=`<div style="position:relative;overflow:hidden;border-radius:14px">
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red) 0%,rgba(180,0,50,0.35) 55%,transparent 100%);z-index:1"></div>
-      <div style="display:flex;align-items:stretch">
-        <div style="background:linear-gradient(160deg,#160010,#0c0016);padding:20px 14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-right:1px solid rgba(120,20,60,0.25)">
-          ${photo
-            ?`<div style="width:62px;height:62px;border-radius:50%;border:2px solid var(--red);overflow:hidden;box-shadow:0 0 22px rgba(200,0,0,0.28);flex-shrink:0"><img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`
-            :`<div style="width:62px;height:62px;border-radius:50%;background:#1a0510;border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 0 22px rgba(200,0,0,0.2);flex-shrink:0">🏋️</div>`}
-        </div>
-        <div style="flex:1;min-width:0;background:linear-gradient(135deg,#0e000c,#07000f);padding:14px 16px;display:flex;flex-direction:column;justify-content:center">
-          ${team?`<div style="font-size:7px;color:var(--red);letter-spacing:3.5px;font-weight:900;text-transform:uppercase;margin-bottom:5px;opacity:.9">${escapeHtml(team)}</div>`:''}
-          <div style="font-size:22px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:2px;line-height:1;margin-bottom:${phrase?'8':'0'}px">${escapeHtml(name.trim())}</div>
-          ${phrase?`<div style="font-size:10px;color:rgba(255,255,255,0.32);font-style:italic;line-height:1.6">"${escapeHtml(phrase)}"</div>`:''}
-        </div>
+    el.innerHTML=`<div style="overflow:hidden;border-radius:14px;display:flex;align-items:stretch">
+      <div style="background:linear-gradient(175deg,#2d0010 0%,#16000a 60%,#0e0008 100%);padding:22px 14px 22px 16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${photo
+          ?`<img src="${photo}" style="width:68px;height:68px;border-radius:50%;object-fit:cover;display:block;border:2px solid rgba(255,255,255,0.12);box-shadow:0 6px 24px rgba(0,0,0,0.6)">`
+          :`<div style="width:68px;height:68px;border-radius:50%;background:rgba(0,0,0,0.35);border:2px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:28px">🏋️</div>`}
+      </div>
+      <div style="flex:1;min-width:0;background:#080008;padding:18px 16px;display:flex;flex-direction:column;justify-content:center;border-left:1px solid rgba(255,80,80,0.08)">
+        ${team?`<div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:900;text-transform:uppercase;margin-bottom:5px">${escapeHtml(team)}</div>`:''}
+        <div style="font-size:26px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:2px;line-height:0.95;margin-bottom:${phrase?'9':'0'}px">${escapeHtml(name.trim())}</div>
+        ${phrase?`<div style="font-size:10px;color:rgba(255,255,255,0.3);font-style:italic;line-height:1.6;padding-left:8px;border-left:1px solid #2a0810">"${escapeHtml(phrase)}"</div>`:''}
       </div>
     </div>`;
   }

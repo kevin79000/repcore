@@ -1954,6 +1954,8 @@ const CLOUD={
       const safeKey=email.replace(/\./g,',');
       const safe={...user};
       delete safe.pwd;delete safe.pwdHash;delete safe._st;delete safe._stb64;delete safe._sk;
+      // seenBilans uses email addresses as keys (dots/@ invalid in Firebase) — strip before push
+      delete safe.seenBilans;
       if(safe.bilans) safe.bilans=await Promise.all(safe.bilans.map(async b=>{
         const cl={...b};
         for(const k of Object.keys(cl)){

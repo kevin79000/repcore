@@ -15,7 +15,12 @@
 <script>if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{
     reg.update();
-    navigator.serviceWorker.addEventListener('controllerchange',()=>location.reload());
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      const safe=['s-splash','s-welcome','s-coach-home','s-client-home','s-coach-entry','s-athlete-entry'];
+      const active=document.querySelector('.screen.active')?.id;
+      if(!active||safe.includes(active)){location.reload();}
+      // Sur les écrans sensibles (paiement, séance, bilan…) : on recharge discrètement à la prochaine navigation
+    });
   });
 }</script>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">

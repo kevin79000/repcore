@@ -1,4 +1,4 @@
-const CACHE = 'repcore-v162';
+const CACHE = 'repcore-v163';
 const SW_DATA = 'repcore-sw-data'; // persistent across updates — not wiped by activate
 const ASSETS = ['./manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png'];
 

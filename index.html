@@ -135,6 +135,11 @@ select.set-input{width:auto!important;min-width:60px;font-size:11px;padding:5px 
 .photo-slot{width:calc(50% - 6px);aspect-ratio:1;background:var(--card2);border-radius:4px;border:1px dashed #2a2a2a;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.2s;overflow:hidden;position:relative}
 .photo-slot:hover{border-color:var(--red)}.photo-slot img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
 .nutrition-day{background:var(--card);border-radius:4px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;border:1px solid var(--border)}
+.fj-entry{background:var(--card);border-radius:8px;padding:10px 12px;display:flex;align-items:center;margin-bottom:6px;border:1px solid var(--border);gap:8px}
+.fj-result{padding:12px 16px;border-bottom:1px solid #111;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fj-result:active{background:#1a1a1a}
+.fj-repas-btn{flex:1;padding:10px 6px;background:#111;border:1px solid #222;border-radius:8px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;text-align:center;transition:all .15s}
+.fj-repas-btn.active{background:#1a0000;border-color:var(--red);color:#fff}
 
 /* ====== CODE DISPLAY ====== */
 .code-display{background:#0f0f0f;border-radius:4px;padding:24px;text-align:center;letter-spacing:8px;font-size:28px;font-weight:900;color:var(--red);border:1px solid #2a0a0a;font-family:monospace}
@@ -1529,6 +1534,8 @@ const COACH_PHOTO='icons/coach.jpg';
   <div class="topbar"><button class="back-btn" onclick="go('s-client-home')">←</button><span class="topbar-title">Nutrition</span><span></span></div>
   <div class="scroll-area" style="flex:1">
     <div class="pad">
+      <!-- JOURNAL DU JOUR -->
+      <div id="fj-today-section" style="margin-bottom:24px"></div>
       <!-- Objectifs calories -->
       <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:16px;margin-bottom:20px">
         <div style="font-size:10px;color:var(--sub);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:14px">🎯 Objectifs caloriques</div>
@@ -1564,6 +1571,63 @@ const COACH_PHOTO='icons/coach.jpg';
       </div>
       <div class="card"><canvas id="nut-chart" height="140"></canvas></div>
       <div id="caff-embedded" style="margin-top:24px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RECHERCHE ALIMENT -->
+<div id="s-food-search" class="screen">
+  <div class="topbar"><button class="back-btn" onclick="loadNutrition()">←</button><span class="topbar-title">Ajouter un aliment</span><span></span></div>
+  <div style="padding:12px 16px;background:#0a0a0a;border-bottom:1px solid #1a1a1a;flex-shrink:0">
+    <input id="fj-search-input" type="search" autocomplete="off" placeholder="Rechercher (ex: poulet, riz, œuf…)"
+      style="width:100%;padding:12px 14px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;color:#fff;font-family:Montserrat,sans-serif;font-size:14px;box-sizing:border-box;outline:none"
+      oninput="onFjSearch(this.value)">
+  </div>
+  <div class="scroll-area" style="flex:1">
+    <div id="fj-recent-section"></div>
+    <div id="fj-results-list"></div>
+    <div style="padding:20px 16px;font-size:9px;color:#333;text-align:center;letter-spacing:.5px">
+      Source&nbsp;: Anses. 2025. Table de composition nutritionnelle des aliments Ciqual
+    </div>
+  </div>
+</div>
+
+<!-- SAISIE QUANTITÉ -->
+<div id="s-food-add" class="screen">
+  <div class="topbar"><button class="back-btn" onclick="go('s-food-search')">←</button><span class="topbar-title">Quantité</span><span></span></div>
+  <div class="scroll-area" style="flex:1">
+    <div class="pad">
+      <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:12px;padding:14px;margin-bottom:18px">
+        <div style="font-size:9px;color:var(--red);letter-spacing:2px;font-weight:800;text-transform:uppercase;margin-bottom:4px" id="fja-food-group">—</div>
+        <div style="font-size:15px;font-weight:800;line-height:1.3" id="fja-food-name">—</div>
+      </div>
+      <div style="margin-bottom:18px">
+        <label style="font-size:10px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:8px">Quantité (grammes)</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="stepFjaQty(-10)" style="width:44px;height:44px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0">−</button>
+          <input type="number" id="fja-qty" value="100" min="1" max="9999"
+            style="flex:1;padding:12px;background:#1a1a1a;border:1px solid var(--border);border-radius:8px;color:#fff;font-family:Montserrat,sans-serif;font-size:20px;font-weight:800;text-align:center"
+            oninput="updateFjaCalc()">
+          <button onclick="stepFjaQty(10)" style="width:44px;height:44px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;color:#fff;font-size:20px;cursor:pointer;flex-shrink:0">+</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="setFjaQty(50)"  style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer">50g</button>
+          <button onclick="setFjaQty(100)" style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer">100g</button>
+          <button onclick="setFjaQty(150)" style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer">150g</button>
+          <button onclick="setFjaQty(200)" style="flex:1;padding:8px;background:#111;border:1px solid #222;border-radius:8px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;cursor:pointer">200g</button>
+        </div>
+      </div>
+      <div id="fja-calc" style="margin-bottom:18px"></div>
+      <div style="margin-bottom:20px">
+        <label style="font-size:10px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;display:block;margin-bottom:10px">Repas</label>
+        <div style="display:flex;gap:8px" id="fja-repas-btns">
+          <button class="fj-repas-btn active" data-repas="matin" onclick="selectRepas('matin')">Matin</button>
+          <button class="fj-repas-btn" data-repas="dejeuner" onclick="selectRepas('dejeuner')">Déjeuner</button>
+          <button class="fj-repas-btn" data-repas="diner" onclick="selectRepas('diner')">Dîner</button>
+          <button class="fj-repas-btn" data-repas="collation" onclick="selectRepas('collation')">Collation</button>
+        </div>
+      </div>
+      <button class="btn btn-red" onclick="saveFoodEntry()" style="font-size:13px;letter-spacing:1px">AJOUTER AU JOURNAL</button>
     </div>
   </div>
 </div>
@@ -5638,6 +5702,215 @@ function setNutriConsumed(key,val){
   currentUser.nutrition.days[key]={consumed:parseInt(val)||0};
   saveUser();loadNutrition();
 }
+// ======= JOURNAL ALIMENTAIRE (Ciqual 2025) =======
+let _ciqualDB=null;
+let _fjFood=null;   // aliment sélectionné
+let _fjDate=null;   // date YYYY-MM-DD du journal ouvert
+let _fjRepas='matin';
+
+function _fjNorm(s){
+  return (s||'').toLowerCase()
+    .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a').replace(/[ùûü]/g,'u')
+    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o').replace(/ç/g,'c')
+    .replace(/œ/g,'oe').replace(/æ/g,'ae');
+}
+
+async function _loadCiqual(){
+  if(_ciqualDB) return _ciqualDB;
+  try{
+    const r=await fetch('./data/ciqual.json');
+    _ciqualDB=await r.json();
+  }catch(e){_ciqualDB=[];}
+  return _ciqualDB;
+}
+
+function openFoodSearch(date){
+  _fjDate=date||localISODate(new Date());
+  go('s-food-search');
+  const inp=document.getElementById('fj-search-input');
+  if(inp){inp.value='';setTimeout(()=>inp.focus(),350);}
+  document.getElementById('fj-results-list').innerHTML='';
+  if(!_ciqualDB){
+    _loadCiqual().then(()=>{_renderFjRecent();});
+  } else {
+    _renderFjRecent();
+  }
+}
+
+function _renderFjRecent(){
+  const el=document.getElementById('fj-recent-section');
+  if(!el||!_ciqualDB) return;
+  const ids=currentUser.nutrition?.recentFoods||[];
+  if(!ids.length){el.innerHTML='<div style="padding:20px 16px;font-size:12px;color:#333;text-align:center">Commence à saisir pour rechercher un aliment</div>';return;}
+  const foods=ids.map(id=>_ciqualDB.find(f=>f.id===id)).filter(Boolean);
+  el.innerHTML='<div style="font-size:9px;color:var(--sub);letter-spacing:2px;font-weight:700;text-transform:uppercase;padding:14px 16px 6px">Récents</div>'+
+    foods.map(_fjResultHtml).join('')+
+    '<div style="height:1px;background:#111;margin:6px 0"></div>';
+}
+
+function _fjResultHtml(f){
+  const kcal=f.k!=null?f.k+' kcal/100g':'—';
+  return `<div class="fj-result" onclick="selectFjFood(${f.id})">
+    <div style="font-weight:700;font-size:13px">${escapeHtml(f.n)}</div>
+    <div style="font-size:10px;color:var(--sub);margin-top:2px;display:flex;gap:10px;align-items:center">
+      <span style="color:var(--red);font-weight:700">${kcal}</span>
+      <span>${escapeHtml(f.g)}</span>
+    </div>
+  </div>`;
+}
+
+function onFjSearch(val){
+  const el=document.getElementById('fj-results-list');
+  if(!el) return;
+  const q=(val||'').trim();
+  if(q.length<2){el.innerHTML='';return;}
+  if(!_ciqualDB){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub);font-size:12px">Chargement…</div>';
+    _loadCiqual().then(()=>onFjSearch(val));
+    return;
+  }
+  const words=_fjNorm(q).split(/\s+/).filter(w=>w.length>1);
+  if(!words.length){el.innerHTML='';return;}
+  const res=_ciqualDB.filter(f=>words.every(w=>f.s.includes(w))).slice(0,50);
+  document.getElementById('fj-recent-section').innerHTML='';
+  if(!res.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub);font-size:12px">Aucun résultat pour "'+escapeHtml(q)+'"</div>';return;}
+  el.innerHTML=res.map(_fjResultHtml).join('');
+}
+
+function selectFjFood(id){
+  if(!_ciqualDB) return;
+  _fjFood=_ciqualDB.find(f=>f.id===id);
+  if(!_fjFood) return;
+  go('s-food-add');
+  document.getElementById('fja-food-name').textContent=_fjFood.n;
+  document.getElementById('fja-food-group').textContent=_fjFood.g||'';
+  document.getElementById('fja-qty').value=100;
+  _fjRepas='matin';
+  document.querySelectorAll('.fj-repas-btn').forEach(b=>b.classList.toggle('active',b.dataset.repas===_fjRepas));
+  updateFjaCalc();
+}
+
+function selectRepas(r){
+  _fjRepas=r;
+  document.querySelectorAll('.fj-repas-btn').forEach(b=>b.classList.toggle('active',b.dataset.repas===r));
+}
+
+function stepFjaQty(delta){
+  const inp=document.getElementById('fja-qty');
+  if(!inp) return;
+  inp.value=Math.max(1,Math.min(9999,(parseFloat(inp.value)||0)+delta));
+  updateFjaCalc();
+}
+
+function setFjaQty(v){
+  const inp=document.getElementById('fja-qty');
+  if(inp){inp.value=v;updateFjaCalc();}
+}
+
+function updateFjaCalc(){
+  const f=_fjFood;if(!f) return;
+  const qty=parseFloat(document.getElementById('fja-qty')?.value)||0;
+  const r=qty/100;
+  const kcal=f.k!=null?Math.round(f.k*r):null;
+  const p=f.p!=null?parseFloat((f.p*r).toFixed(1)):null;
+  const c=f.c!=null?parseFloat((f.c*r).toFixed(1)):null;
+  const l=f.l!=null?parseFloat((f.l*r).toFixed(1)):null;
+  const el=document.getElementById('fja-calc');
+  if(!el) return;
+  el.innerHTML=`<div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:12px;padding:14px;display:flex;justify-content:space-around;text-align:center">
+    <div><div style="font-size:26px;font-family:'Bebas Neue',Impact,sans-serif;color:var(--red);line-height:1">${kcal??'—'}</div><div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">KCAL</div></div>
+    <div><div style="font-size:26px;font-family:'Bebas Neue',Impact,sans-serif;line-height:1">${p??'—'}</div><div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">PROT g</div></div>
+    <div><div style="font-size:26px;font-family:'Bebas Neue',Impact,sans-serif;line-height:1">${c??'—'}</div><div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">GLUC g</div></div>
+    <div><div style="font-size:26px;font-family:'Bebas Neue',Impact,sans-serif;line-height:1">${l??'—'}</div><div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;margin-top:2px">LIP g</div></div>
+  </div>`;
+}
+
+function saveFoodEntry(){
+  const f=_fjFood;if(!f) return;
+  const qty=parseFloat(document.getElementById('fja-qty')?.value)||0;
+  if(qty<=0){toast('Saisis une quantité','var(--orange)');return;}
+  const r=qty/100;
+  const entry={
+    id:Date.now(),alim_id:f.id,nom:f.n,groupe:f.g||'',qty,repas:_fjRepas,
+    kcal:f.k!=null?Math.round(f.k*r):null,
+    p:f.p!=null?parseFloat((f.p*r).toFixed(1)):null,
+    c:f.c!=null?parseFloat((f.c*r).toFixed(1)):null,
+    l:f.l!=null?parseFloat((f.l*r).toFixed(1)):null,
+    fi:f.f!=null?parseFloat((f.f*r).toFixed(1)):null,
+  };
+  if(!currentUser.nutrition) currentUser.nutrition={};
+  if(!currentUser.nutrition.log) currentUser.nutrition.log={};
+  if(!currentUser.nutrition.log[_fjDate]) currentUser.nutrition.log[_fjDate]={entries:[]};
+  currentUser.nutrition.log[_fjDate].entries.push(entry);
+  let rec=currentUser.nutrition.recentFoods||[];
+  currentUser.nutrition.recentFoods=[f.id,...rec.filter(id=>id!==f.id)].slice(0,10);
+  saveUser();
+  toast('Ajouté ✓');
+  loadNutrition();
+}
+
+function deleteFoodEntry(date,id){
+  const log=currentUser.nutrition?.log?.[date];
+  if(!log) return;
+  log.entries=log.entries.filter(e=>e.id!==id);
+  saveUser();
+  _renderFjDaySummary(date);
+}
+
+function _renderFjDaySummary(date){
+  const el=document.getElementById('fj-today-section');
+  if(!el) return;
+  const nut=currentUser.nutrition||{};
+  const entries=(nut.log?.[date]?.entries)||[];
+  const isOn=nutIsOnDay(date);
+  const targetKcal=isOn?(nut.on_kcal||0):(nut.off_kcal||0);
+  const tot=entries.reduce((a,e)=>({
+    kcal:a.kcal+(e.kcal||0),p:a.p+(e.p||0),c:a.c+(e.c||0),l:a.l+(e.l||0)
+  }),{kcal:0,p:0,c:0,l:0});
+  const pct=targetKcal>0?Math.min(100,Math.round(tot.kcal/targetKcal*100)):0;
+  const rem=targetKcal>0?targetKcal-tot.kcal:null;
+  const barColor=rem!==null&&rem<0?'var(--red)':'#22c55e';
+  const repasOrder=['matin','dejeuner','diner','collation'];
+  const repasLabels={matin:'Petit-déjeuner',dejeuner:'Déjeuner',diner:'Dîner',collation:'Collation'};
+  const grouped={};
+  entries.forEach(e=>{const r=e.repas||'dejeuner';if(!grouped[r])grouped[r]=[];grouped[r].push(e);});
+
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0;font-size:16px">Journal du jour</h3>
+      <button onclick="openFoodSearch('${date}')" style="background:var(--red);border:none;color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;padding:8px 14px;border-radius:8px;cursor:pointer">+ AJOUTER</button>
+    </div>
+    ${targetKcal>0?`
+    <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+        <span style="font-size:32px;font-family:'Bebas Neue',Impact,sans-serif;color:var(--red);line-height:1">${tot.kcal} <span style="font-size:13px;color:var(--sub);font-family:Montserrat,sans-serif;font-weight:400">kcal</span></span>
+        <span style="font-size:11px;color:var(--sub)">${rem!==null?(rem>=0?rem+' restantes':Math.abs(rem)+' dépassées'):'/ '+targetKcal+' kcal'}</span>
+      </div>
+      <div style="height:8px;background:#1a1a1a;border-radius:4px;overflow:hidden;margin-bottom:12px">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:4px;transition:width .4s"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="flex:1;background:#111;border-radius:8px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#60a5fa">${parseFloat(tot.p.toFixed(1))}<span style="font-size:9px;color:var(--sub);font-weight:400"> g</span></div><div style="font-size:8px;color:var(--sub);letter-spacing:1px;margin-top:2px">PROTÉINES</div></div>
+        <div style="flex:1;background:#111;border-radius:8px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#4ade80">${parseFloat(tot.c.toFixed(1))}<span style="font-size:9px;color:var(--sub);font-weight:400"> g</span></div><div style="font-size:8px;color:var(--sub);letter-spacing:1px;margin-top:2px">GLUCIDES</div></div>
+        <div style="flex:1;background:#111;border-radius:8px;padding:8px;text-align:center"><div style="font-size:16px;font-weight:800;color:#fb923c">${parseFloat(tot.l.toFixed(1))}<span style="font-size:9px;color:var(--sub);font-weight:400"> g</span></div><div style="font-size:8px;color:var(--sub);letter-spacing:1px;margin-top:2px">LIPIDES</div></div>
+      </div>
+    </div>`:''}
+    ${entries.length===0?`<div style="text-align:center;padding:18px 0 8px;color:#333;font-size:12px">Aucun aliment enregistré — appuie sur + AJOUTER</div>`:''}
+    ${repasOrder.filter(r=>grouped[r]).map(r=>`
+      <div style="margin-bottom:14px">
+        <div style="font-size:8px;color:var(--sub);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:6px">${repasLabels[r]}</div>
+        ${grouped[r].map(e=>`<div class="fj-entry">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(e.nom)}</div>
+            <div style="font-size:10px;color:var(--sub);margin-top:2px">${e.qty}g · P ${e.p??'—'}g · G ${e.c??'—'}g · L ${e.l??'—'}g</div>
+          </div>
+          <div style="flex-shrink:0;margin-left:8px;text-align:right">
+            <div style="font-size:14px;font-weight:800;color:var(--red)">${e.kcal??'—'} <span style="font-size:9px;color:var(--sub);font-weight:400">kcal</span></div>
+            <button onclick="deleteFoodEntry('${date}',${e.id})" style="background:none;border:none;color:#333;font-size:14px;cursor:pointer;padding:2px 4px;margin-top:2px">✕</button>
+          </div>
+        </div>`).join('')}
+      </div>`).join('')}`;
+}
 function loadNutrition(){
   go('s-nutrition');
   const nut=currentUser.nutrition||{};
@@ -5730,6 +6003,7 @@ function loadNutrition(){
     });
   },50);
   loadCaffeineEmbedded();
+  _renderFjDaySummary(localISODate(new Date()));
 }
 function setNutri(key,val){
   // Legacy compat

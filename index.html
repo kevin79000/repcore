@@ -7337,8 +7337,8 @@ function _renderPromoBanners(coach){
   const banners=(coach?.promoBanners||[]).filter(b=>b.imageUrl);
   if(!banners.length){el.style.display='none';return;}
   el.style.display='block';
-  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px">
-    <div style="display:flex;gap:10px;width:max-content">
+  el.innerHTML=`<div style="overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 0.5cm 4px">
+    <div style="display:flex;justify-content:center;gap:10px;min-width:min-content">
       ${banners.map(b=>{
         const inner=`<img src="${escapeHtml(b.imageUrl)}" style="width:260px;height:120px;object-fit:cover;border-radius:8px;display:block;border:1px solid #2a2a2a" onerror="this.style.display='none'">`;
         return b.linkUrl

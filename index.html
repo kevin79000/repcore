@@ -2214,7 +2214,14 @@ window.onload=()=>{
             // Push immédiat non-debounced pour garantir l'envoi des données locales (profil coach pré-v144)
             setTimeout(()=>{try{const u=DB.get('users');if(u) CLOUD._doPush(u);}catch{}},800);
           }
-          routeUser();
+          // Retour depuis redirection PayPal → remettre sur la page paiement
+          if(sessionStorage.getItem('rc_paypal_return')){
+            sessionStorage.removeItem('rc_paypal_return');
+            go('s-subscribe');
+            loadSubscribePage();
+          } else {
+            routeUser();
+          }
         }
       } else if(window._importedCoach){
         go('s-athlete-entry');
@@ -7691,6 +7698,7 @@ function renderPaypalButton(planId,coachId){
   paypal.Buttons({
     style:{layout:'vertical',color:'black',shape:'rect',label:'subscribe'},
     createSubscription:function(data,actions){
+      sessionStorage.setItem('rc_paypal_return','1');
       return actions.subscription.create({'plan_id':planId});
     },
     onApprove:function(data){

@@ -1,4 +1,4 @@
-const CACHE = 'repcore-v203';
+const CACHE = 'repcore-v204';
 const SW_DATA = 'repcore-sw-data'; // persistent across updates — not wiped by activate
 const ASSETS = ['./manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png', './data/ciqual.json'];
 
@@ -21,7 +21,7 @@ self.addEventListener('fetch', e => {
   // tout appel fetch() qui attend du JSON — notamment generateAccessToken.
   if (!url.startsWith(self.location.origin)) return;
   // index.html : network-first (toujours à jour), fallback cache si offline
-  if (url.includes('index.html') || url.endsWith('/') || url.endsWith('/repcore/')) {
+  if (url.includes('index.html') || url.endsWith('/') || url.endsWith('/coaching/')) {
     e.respondWith(
       fetch(e.request).then(r => {
         const clone = r.clone();

@@ -1034,6 +1034,29 @@ const COACH_PHOTO='icons/coach.jpg';
         </div>
       </div>
 
+      <!-- PHOTO 2 : page liens YouTube (analyse IA — cachée des athlètes) -->
+      <div style="margin-top:10px">
+        <div style="font-size:9px;color:#4ade80;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:4px"> Photo liens YouTube <span style="opacity:.5;font-size:8px">(cachée — IA seulement)</span></div>
+        <div id="prog-photo2-ph" onclick="document.getElementById('prog-photo2-input').click()"
+          style="border:1px dashed #2a2a2a;border-radius:8px;padding:10px;text-align:center;cursor:pointer"
+          onmouseover="this.style.borderColor='#4ade80'" onmouseout="this.style.borderColor='#2a2a2a'">
+          <input type="file" id="prog-photo2-input" accept="image/*" style="display:none" onchange="loadProgPhoto2(this)">
+          <div style="font-size:11px;color:var(--sub);font-weight:700"> + Page des liens YouTube</div>
+        </div>
+        <div id="prog-photo2-ready" style="display:none;margin-top:4px;background:#0a1a00;border:1px solid #1a3a0a;border-radius:8px;padding:8px 12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="color:#4ade80;font-size:11px;font-weight:700;flex:1">✓ Photo vidéos prête</span>
+            <label onclick="document.getElementById('prog-photo2-input').click()" style="cursor:pointer;font-size:10px;color:var(--sub);padding:3px 8px;background:#161616;border-radius:4px;border:1px solid var(--border)">Changer</label>
+            <button onclick="clearProgPhoto2()" style="background:none;border:none;color:#f87171;font-size:18px;cursor:pointer;padding:0 4px;line-height:1">×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOUTON ANALYSER LES 2 PHOTOS -->
+      <button id="prog-analyze-btn" onclick="analyzeProgPhotos()" style="display:none;width:100%;margin-top:10px;padding:12px;background:linear-gradient(180deg,#1a0000,#110000);border:1px solid #3a0a0a;border-radius:3px;color:#f87171;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;align-items:center;justify-content:center;gap:8px">
+         Analyser les 2 photos → Importer les exercices
+      </button>
+
       <!-- PROTOCOLES DE SÉANCE -->
       <div style="margin-top:20px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -4042,6 +4065,7 @@ function saveProgram(){
     currentUser.sessions_config[idx].warmup=document.getElementById('prog-warmup').value;
     currentUser.sessions_config[idx].cooldown=document.getElementById('prog-cooldown').value;
     if(progPhotoData) currentUser.sessions_config[idx].photo=progPhotoData;
+    if(progPhoto2Data) currentUser.sessions_config[idx].photo2=progPhoto2Data;
     saveUser();
     window._editingSessionIdx=null;
     toast(' Séance sauvegardée !');
@@ -4443,9 +4467,15 @@ function openSessionExercises(idx){
   document.getElementById('prog-warmup').value=cfg[idx].warmup??currentUser._defaultWarmup??'';
   document.getElementById('prog-cooldown').value=cfg[idx].cooldown??currentUser._defaultCooldown??'';
   progPhotoData=cfg[idx].photo||null;
+  progPhoto2Data=cfg[idx].photo2||null;
   const img=document.getElementById('prog-photo-preview');
   if(progPhotoData){img.src=progPhotoData;img.style.display='block';document.getElementById('prog-photo-ph').style.display='none';}
   else{img.style.display='none';document.getElementById('prog-photo-ph').style.display='block';}
+  // Photo2 indicator
+  const p2ph=document.getElementById('prog-photo2-ph');
+  const p2ok=document.getElementById('prog-photo2-ready');
+  if(p2ph&&p2ok){if(progPhoto2Data){p2ph.style.display='none';p2ok.style.display='block';}else{p2ph.style.display='block';p2ok.style.display='none';}}
+  _updateAnalyzeBtn();
   window._editingSessionIdx=idx;
 
   // Adapter le screen pour la vue athlète
@@ -8079,7 +8109,13 @@ function logout(){
 }
 
 // ======= PHOTO PROGRAMME =======
-let progPhotoData=null;
+let progPhotoData=null, progPhoto2Data=null;
+
+function _updateAnalyzeBtn(){
+  const btn=document.getElementById('prog-analyze-btn');
+  if(!btn) return;
+  btn.style.display=progPhotoData?'flex':'none';
+}
 function loadProgPhoto(input){
   const f=input.files[0];if(!f) return;
   compressImage(f,1200,0.75,data=>{
@@ -8089,6 +8125,7 @@ function loadProgPhoto(input){
     document.getElementById('prog-photo-ph').style.display='none';
     document.getElementById('prog-photo-actions').style.display='flex';
     document.getElementById('prog-photo-zone').style.borderColor='var(--red)';
+    _updateAnalyzeBtn();
   });
 }
 function dropProgPhoto(e){
@@ -8105,6 +8142,40 @@ function clearProgPhoto(){
   document.getElementById('prog-photo-ph').style.display='block';
   document.getElementById('prog-photo-actions').style.display='none';
   document.getElementById('prog-photo-zone').style.borderColor='var(--border)';
+  _updateAnalyzeBtn();
+}
+function loadProgPhoto2(input){
+  const f=input.files[0];if(!f) return;
+  compressImage(f,1200,0.75,data=>{
+    progPhoto2Data=data;
+    document.getElementById('prog-photo2-ph').style.display='none';
+    document.getElementById('prog-photo2-ready').style.display='block';
+  });
+}
+function clearProgPhoto2(){
+  progPhoto2Data=null;
+  document.getElementById('prog-photo2-ph').style.display='block';
+  document.getElementById('prog-photo2-ready').style.display='none';
+}
+async function analyzeProgPhotos(){
+  if(!progPhotoData){toast('Ajoute d\'abord la photo de séance.','var(--orange)');return;}
+  const btn=document.getElementById('prog-analyze-btn');
+  const reset=()=>{if(btn){btn.innerHTML=' Analyser les 2 photos → Importer les exercices';btn.disabled=false;}};
+  if(btn){btn.innerHTML='⏳ Lecture photo séance...';btn.disabled=true;btn.style.opacity='0.7';}
+  try{
+    const text=await _ocrImage(progPhotoData);
+    if(!text){toast('Texte illisible. Photo plus nette ?','var(--orange)');reset();return;}
+    const exercises=parseWorkoutSheet(text);
+    if(!exercises.length){toast('Aucun exercice détecté.','var(--orange)');reset();return;}
+    let videoLinks=[];
+    if(progPhoto2Data){
+      if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
+      try{const vidText=await _ocrImage(progPhoto2Data);videoLinks=parseVideoLinks(vidText);}catch{}
+    }
+    const idx=window._editingSessionIdx;
+    showOcrReviewModal(exercises,typeof idx==='number'?idx:null,videoLinks);
+    reset();
+  }catch(e){toast('Erreur : '+e.message,'var(--red)');reset();}
 }
 
 // ======= CALCULATEUR RIR (logique Sheets) =======

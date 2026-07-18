@@ -658,6 +658,7 @@ const COACH_PHOTO='icons/coach.jpg';
         <div>
           <div style="font-size:7px;color:var(--red);letter-spacing:4px;font-weight:700;text-transform:uppercase;margin-bottom:2px">COACH</div>
           <div style="font-size:14px;font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:1px;line-height:1" id="ch-name"></div>
+          <span class="coach-sync-badge" style="font-size:8px;font-weight:700;letter-spacing:.3px;display:block;margin-top:2px"></span>
         </div>
       </div>
       <div style="display:flex;gap:8px">
@@ -885,7 +886,7 @@ const COACH_PHOTO='icons/coach.jpg';
 </div>
 <!-- COACH CLIENT DETAIL -->
 <div id="s-coach-client" class="screen">
-  <div class="topbar"><button class="back-btn" onclick="go('s-coach-home');loadCoachHome()">←</button><span class="topbar-title" id="ccd-title">Athlète</span><span></span></div>
+  <div class="topbar"><button class="back-btn" onclick="go('s-coach-home');loadCoachHome()">←</button><span class="topbar-title" id="ccd-title">Athlète</span><span class="coach-sync-badge" style="font-size:9px;font-weight:700;letter-spacing:.3px"></span></div>
   <div class="scroll-area" style="flex:1">
     <div class="pad">
       <div class="card" style="margin-bottom:16px">
@@ -2124,8 +2125,13 @@ const CLOUD={
         return cl;
       }));
       const url=this._fbUrl.replace('users.json','users/'+safeKey+'.json');
-      await fetch(url+'?auth='+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(safe)});
-    }catch{}
+      const r=await fetch(url+'?auth='+token,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(safe)});
+      if(!r.ok) console.error('[RepCore] sync push HTTP '+r.status+' ('+r.statusText+') — '+email);
+      this._setSyncStatus(r.ok);
+    }catch(e){
+      console.error('[RepCore] sync push error:',e);
+      this._setSyncStatus(false);
+    }
   },
   async _compressPhoto(dataURL){
     return new Promise(resolve=>{
@@ -2144,6 +2150,18 @@ const CLOUD={
         img.src=dataURL;
       }catch{resolve(null);}
     });
+  },
+  _setSyncStatus(ok){
+    this._lastSync={ok,ts:Date.now()};
+    this._updateSyncBadge();
+  },
+  _updateSyncBadge(){
+    const s=this._lastSync;if(!s) return;
+    const age=Math.round((Date.now()-s.ts)/1000);
+    const timeLabel=age<5?'à l\'instant':age<60?age+'s':Math.round(age/60)+'min';
+    const text=s.ok?'● '+timeLabel:'● échec synchro';
+    const color=s.ok?'#22c55e':'#f97316';
+    document.querySelectorAll('.coach-sync-badge').forEach(el=>{el.textContent=text;el.style.color=color;});
   },
   async _doPush(users){
     // Ne pousse QUE currentUser — évite d'écraser les données d'athlètes avec des copies obsolètes

@@ -8334,6 +8334,8 @@ function _driveOpenUrl(s){
 }
 
 async function parsePdfProgramme(source){
+  // Drive/Dropbox : détection immédiate avant tout chargement CDN
+  if(typeof source==='string'&&_isDriveLink(source)) throw new Error('DRIVE_CORS:'+source);
   await _loadPdfJs();
   let data;
   if(source instanceof File||source instanceof Blob){
@@ -8343,10 +8345,6 @@ async function parsePdfProgramme(source){
     const bin=atob(b64),bytes=new Uint8Array(bin.length);
     for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
     data=bytes.buffer;
-  } else if(_isDriveLink(source)){
-    // Google Drive / Dropbox bloquent le fetch cross-origin (CORS)
-    // → modale guidée pour télécharger et réimporter
-    throw new Error('DRIVE_CORS:'+source);
   } else {
     const r=await fetch(source);
     if(!r.ok) throw new Error('Impossible de télécharger le PDF ('+r.status+').');
@@ -8367,8 +8365,8 @@ async function parsePdfProgramme(source){
 
 async function triggerPdfProgrammeImport(email){
   const users=DB.get('users')||{};
-  const c=users[email];
-  if(!c) return;
+  const c=users[email]||Object.values(users).find(u=>u.email===email);
+  if(!c){toast('Athlète introuvable.','var(--orange)');return;}
   const source=c.programPdfStorageUrl||c.programPdfLink||c.programPdf;
   if(!source){toast('Aucun PDF lié à cet athlète.','var(--orange)');return;}
   toast('Lecture du PDF en cours…');

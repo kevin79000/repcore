@@ -3214,7 +3214,7 @@ function addBilanPhoto(bilanDate,bilanType,view,inputEl){
     const photoKey=prefix+'-photo-'+view;
     bil[photoKey]=e.target.result;
     try{localStorage.setItem('rc_photo_'+bilanDate+'_'+photoKey,e.target.result);}catch(ex){}
-    users[cl.email]=cl;
+    cl.updatedAt=Date.now();users[cl.email]=cl;
     DB.set('users',users);CLOUD.pushOne(cl.email,cl);
     toast('Photo ajoutée','var(--green)');
     renderBilanEvolution(cl);
@@ -3276,7 +3276,7 @@ function renderBilanEvolution(c){
   if(height&&!c._evol_height&&!c['init-height']){
     const users=DB.get('users')||{};
     const at=Object.values(users).find(u=>u.id===c.id);
-    if(at&&!at._evol_height){at._evol_height=height;users[at.email]=at;DB.set('users',users);CLOUD.pushOne(at.email,at);}
+    if(at&&!at._evol_height){at._evol_height=height;at.updatedAt=Date.now();users[at.email]=at;DB.set('users',users);CLOUD.pushOne(at.email,at);}
   }
   // Gender: 'femme' / 'homme' / 'H' / 'F'
   const gender=c._evol_gender||c.gender||'H';
@@ -3605,7 +3605,7 @@ function uploadCoachPdf(input){
     c.programPdfSize=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' Mo':(f.size/1024).toFixed(0)+' Ko';
     c.programPdfDate=Date.now();
     c.programPdfVersion=(c.programPdfVersion||0)+1;
-    users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+    c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
     refreshPdfUI(c);
     toast(' PDF v'+c.programPdfVersion+' importé — '+c.programPdfName);
   };r.readAsDataURL(f);
@@ -3627,7 +3627,7 @@ function saveCoachPdfLink(){
   c.programPdfSize='Lien externe';
   c.programPdfDate=Date.now();
   c.programPdfVersion=(c.programPdfVersion||0)+1;
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   refreshPdfUI(c);
   toast(' Lien v'+c.programPdfVersion+' enregistré !');
 }
@@ -3638,7 +3638,7 @@ function removeCoachPdf(){
   const c=Object.values(users).find(u=>u.id===currentClientId);
   if(!c) return;
   c.programPdf=null;c.programPdfLink=null;c.programPdfName=null;c.programPdfDate=null;c.programPdfSize=null;
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   refreshPdfUI(c);
   openClientDetail(currentClientId,true);
   toast('PDF supprimé.');
@@ -3688,7 +3688,7 @@ function uploadCoachPdfInline(input){
     c.programPdfSize=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' Mo':(f.size/1024).toFixed(0)+' Ko';
     c.programPdfDate=Date.now();
     c.programPdfVersion=(c.programPdfVersion||0)+1;
-    users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+    c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
     toast('PDF v'+c.programPdfVersion+' importé — '+c.programPdfName);
     openClientDetail(currentClientId,true);
   };r.readAsDataURL(f);
@@ -3707,7 +3707,7 @@ function saveCoachPdfLinkInline(){
   c.programPdfName='Programme (Drive)';
   c.programPdfDate=Date.now();
   c.programPdfVersion=(c.programPdfVersion||0)+1;
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   toast('Lien v'+c.programPdfVersion+' enregistré !');
   openClientDetail(currentClientId,true);
 }
@@ -3825,7 +3825,7 @@ function saveProgram(){
   c.programCooldown=document.getElementById('prog-cooldown').value;
   c.programUpdatedAt=Date.now();
   if(progPhotoData) c.programPhoto=progPhotoData;
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   toast(' Programme sauvegardé !');go('s-coach-client');
 }
 
@@ -6312,7 +6312,7 @@ function saveClientNutriDiet(type){
   if(!c) return;
   if(!c.nutrition) c.nutrition={};
   c.nutrition.dietType=type;
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   toast('Type de diète enregistré ✓');
   renderCoachNutriSection(c);
 }
@@ -6327,7 +6327,7 @@ function saveClientNutriMacros(){
     on:{kcal:g('ccd-on-kcal'),p:g('ccd-on-p'),g:g('ccd-on-g'),l:g('ccd-on-l'),s:g('ccd-on-s'),f:g('ccd-on-f')},
     off:{kcal:g('ccd-off-kcal'),p:g('ccd-off-p'),g:g('ccd-off-g'),l:g('ccd-off-l'),s:g('ccd-off-s'),f:g('ccd-off-f')},
   };
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   toast('Objectifs enregistrés ✓');
 }
 
@@ -6341,7 +6341,7 @@ function addClientStrictPhoto(input){
     if(!c.nutrition) c.nutrition={};
     if(!Array.isArray(c.nutrition.strictPhotos)) c.nutrition.strictPhotos=[];
     c.nutrition.strictPhotos.push(b64);
-    users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+    c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
     toast('Photo ajoutée ✓');
     renderCoachNutriSection(c);
   });
@@ -6352,7 +6352,7 @@ function deleteClientStrictPhoto(index){
   const c=Object.values(users).find(u=>u.id===currentClientId);
   if(!c||!c.nutrition?.strictPhotos) return;
   c.nutrition.strictPhotos.splice(index,1);
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   renderCoachNutriSection(c);
 }
 
@@ -6629,7 +6629,7 @@ function saveClientSuppEntry(){
   if(!c.nutrition) c.nutrition={};
   if(!Array.isArray(c.nutrition.supplements)) c.nutrition.supplements=[];
   c.nutrition.supplements.push({id:Date.now(),name,dosage_quantity:qty,dosage_unit:unit,timings,notes,active:true});
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   toast('Complément ajouté ✓');
   renderCoachSuppSection(c);
 }
@@ -6639,7 +6639,7 @@ function deleteClientSuppEntry(index){
   const c=Object.values(users).find(u=>u.id===currentClientId);
   if(!c||!Array.isArray(c.nutrition?.supplements)) return;
   c.nutrition.supplements.splice(index,1);
-  users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
   renderCoachSuppSection(c);
 }
 
@@ -7237,7 +7237,7 @@ function saveVideoCorrection(){
   c.videos[idx].feedback=general;
   c.videos[idx].feedbackTimestamps=tss;
   c.videos[idx].feedbackDate=Date.now();
-  users[window._vcEmail]=c;
+  c.updatedAt=Date.now();users[window._vcEmail]=c;
   DB.set('users',users);CLOUD.pushOne(window._vcEmail,c);
   closeModal();
   toast('Correction enregistrée !','var(--green)');
@@ -8071,7 +8071,7 @@ async function createAthlete(){
   currentUser.studentCodes.push({...payload,token,usedBy:fn+' '+ln,athleteEmail:em,active:true,redeemed:true,createdAt:Date.now()});
   if(!currentUser.clients) currentUser.clients=[];
   currentUser.clients.push(uid);
-  users[em]=athlete;
+  athlete.updatedAt=Date.now();users[em]=athlete;
   users[currentUser.email]=currentUser;
   DB.set('users',users);CLOUD.pushOne(em,athlete);
   DB.set('session',currentUser);

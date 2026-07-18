@@ -4335,6 +4335,8 @@ function launchWorkout(sessConfig){
 function _renderProgExercisesInto(el){
   const prog=getProgram();
   if(prog._isDefault){
+    const u=(DB.get('users')||{})[currentUser.email]||currentUser;
+    if(u.programPdf||u.programPdfLink){el.innerHTML='';return;}
     el.innerHTML=`
       <div style="text-align:center;padding:32px 24px 16px">
         <div style="font-size:36px;margin-bottom:12px">⏳</div>

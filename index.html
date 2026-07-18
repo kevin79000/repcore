@@ -4547,7 +4547,8 @@ function renderSets(ex,data){
     const w=parseFloat(s.weight);
     if(w>0 && s.rir!==''&&s.rir!==undefined&&s.rir!==null){
       const mult=RIR_MULT[String(s.rir)]??1.0;
-      const nextW=Math.round(w*mult/2.5)*2.5;
+      const _raw=w*mult;
+      const nextW=mult>1?(_raw<20?Math.ceil(_raw/1.25)*1.25:Math.ceil(_raw/2.5)*2.5):roundWeight(_raw);
       if(!data.sets[i+1].done&&!data.sets[i+1].userEdited){
         data.sets[i+1].weight=nextW;
         data.sets[i+1].isAuto=true;

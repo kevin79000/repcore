@@ -2182,6 +2182,11 @@ const CLOUD={
       // seenBilans uses email addresses as keys (dots/@ invalid in Firebase) — strip before push
       delete safe.seenBilans;
       delete safe.programPdf; // base64 blob — stocké dans Firebase Storage, pas dans RTDB
+      // Supprimer photo2 (base64 temporaire pour OCR) de chaque session avant push RTDB
+      if(safe.sessions_config) safe.sessions_config=safe.sessions_config.map(s=>{
+        if(!s.photo2) return s;
+        const {photo2,...rest}=s; return rest;
+      });
       if(safe.bilans) safe.bilans=await Promise.all(safe.bilans.map(async b=>{
         const cl={...b};
         for(const k of Object.keys(cl)){
@@ -4347,6 +4352,25 @@ function loadSessionManager(){
           }
         </div>
 
+        <!-- Photo vidéos (liens YouTube — cachée) -->
+        <div style="margin-bottom:12px">
+          <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:5px"> Photo liens vidéos <span style="opacity:.5">(cachée — IA seulement)</span></div>
+          ${s.photo2?`
+            <div style="display:flex;align-items:center;gap:8px;background:#0a1a00;border:1px solid #1a3a0a;border-radius:8px;padding:8px 12px">
+              <div style="color:#4ade80;font-size:11px;font-weight:700;flex:1">✓ Photo vidéos prête</div>
+              <label style="cursor:pointer;font-size:10px;color:var(--sub);padding:4px 8px;background:#161616;border-radius:4px;border:1px solid var(--border);white-space:nowrap">
+                Changer<input type="file" accept="image/*" style="display:none" onchange="uploadSessionPhoto2(${i},this)">
+              </label>
+              <button onclick="removeSessionPhoto2(${i})" style="background:none;border:none;color:#f87171;font-size:18px;cursor:pointer;padding:0 4px">×</button>
+            </div>`:`
+            <label style="display:block;cursor:pointer">
+              <input type="file" accept="image/*" style="display:none" onchange="uploadSessionPhoto2(${i},this)">
+              <div style="border:1px dashed #2a2a2a;border-radius:8px;padding:9px;text-align:center" onmouseover="this.style.borderColor='#4ade80'" onmouseout="this.style.borderColor='#2a2a2a'">
+                <div style="font-size:10px;color:var(--sub);font-weight:700;letter-spacing:1px"> + Page liens YouTube (pour l'IA)</div>
+              </div>
+            </label>`}
+        </div>
+
         <!-- Exercices + actions -->
         <div style="display:flex;gap:8px">
           <button class="btn btn-outline btn-sm" style="flex:1" onclick="openSessionExercises(${i})">️ Exercices (${s.exercises?.length||0})</button>
@@ -4389,6 +4413,24 @@ function uploadSessionPhoto(idx,input){
     currentUser.sessions_config[idx].photo=data;
     saveUser();loadSessionManager();toast(' Photo enregistrée !');
   });
+}
+function uploadSessionPhoto2(idx,input){
+  const f=input.files[0];if(!f) return;
+  compressImage(f,1200,0.75,data=>{
+    if(!currentUser.sessions_config) initSessionsConfig();
+    currentUser.sessions_config[idx].photo2=data;
+    saveUser();loadSessionManager();toast(' Photo vidéos enregistrée !');
+  });
+}
+function removeSessionPhoto2(i){
+  if(!currentUser.sessions_config) return;
+  currentUser.sessions_config[i].photo2=null;
+  saveUser();loadSessionManager();
+}
+function parseVideoLinks(text){
+  // Extrait tous les liens YouTube dans l'ordre (youtu.be et youtube.com)
+  const raw=text.match(/https?:\/\/(?:youtu\.be\/|(?:www\.)?youtube\.com\/(?:watch\?v=|shorts\/))[a-zA-Z0-9_\-]+/g)||[];
+  return [...new Set(raw)];
 }
 
 function openSessionExercises(idx){
@@ -4624,6 +4666,10 @@ function _renderProgExercisesInto(el){
             <div class="ex-detail" style="margin-top:3px">${ex.series} séries · ${escapeHtml(ex.reps)} reps${ex.repos?' · '+escapeHtml(ex.repos):''}</div>
             ${badge?`<div style="margin-top:5px">${badge}</div>`:''}
             ${ex.description?`<div style="font-size:11px;color:#444;margin-top:6px;line-height:1.5;border-left:2px solid #2a2a2a;padding-left:8px">${escapeHtml(ex.description)}</div>`:''}
+            ${(ex.videoUrl||ex.videoUrl2)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+              ${ex.videoUrl?`<a href="${safeUrl(ex.videoUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 1</a>`:''}
+              ${ex.videoUrl2?`<a href="${safeUrl(ex.videoUrl2)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 2</a>`:''}
+            </div>`:''}
           </div>
         </div>
       </div>`;
@@ -8109,6 +8155,23 @@ function dataURLtoBlob(dataURL){
   return new Blob([u8],{type:mime});
 }
 
+async function _ocrImage(dataUrl){
+  const blob=dataURLtoBlob(dataUrl);
+  const fd=new FormData();
+  fd.append('file',blob,'img.jpg');
+  fd.append('apikey','K81774208988957');
+  fd.append('language','fre');
+  fd.append('isTable','true');
+  fd.append('scale','true');
+  fd.append('OCREngine','2');
+  fd.append('isCreateSearchablePDF','false');
+  const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',body:fd});
+  if(!res.ok) throw new Error('Service OCR indisponible ('+res.status+')');
+  const d=await res.json();
+  if(d.IsErroredOnProcessing) throw new Error(d.ErrorMessage?.[0]||'Erreur OCR');
+  return(d.ParsedResults?.[0]?.ParsedText||'').trim();
+}
+
 async function analyzePhotoWithClaude(idx){
   const cfg=currentUser.sessions_config;
   const photo=cfg[idx].photo;
@@ -8117,25 +8180,20 @@ async function analyzePhotoWithClaude(idx){
   const resetBtn=()=>{if(btn){btn.innerHTML=' Lire & importer les exercices';btn.disabled=false;btn.style.opacity='1';}};
   if(btn){btn.innerHTML='⏳ Lecture OCR en cours...';btn.disabled=true;btn.style.opacity='0.7';}
   try{
-    // OCR via ocr.space (service gratuit, clé démo intégrée)
-    const blob=dataURLtoBlob(photo);
-    const fd=new FormData();
-    fd.append('file',blob,'prog.jpg');
-    fd.append('apikey','K81774208988957'); // clé gratuite publique ocr.space
-    fd.append('language','fre');
-    fd.append('isTable','true');
-    fd.append('scale','true');
-    fd.append('OCREngine','2');
-    fd.append('isCreateSearchablePDF','false');
-    const res=await fetch('https://api.ocr.space/parse/image',{method:'POST',body:fd});
-    if(!res.ok) throw new Error('Service OCR indisponible ('+res.status+')');
-    const ocrData=await res.json();
-    if(ocrData.IsErroredOnProcessing) throw new Error(ocrData.ErrorMessage?.[0]||'Erreur OCR');
-    const rawText=(ocrData.ParsedResults?.[0]?.ParsedText||'').trim();
+    const rawText=await _ocrImage(photo);
     if(!rawText){toast('Texte illisible. Essaie une photo plus nette et bien cadrée.','var(--orange)');resetBtn();return;}
     const exercises=parseWorkoutSheet(rawText);
     if(!exercises.length){toast('Aucun exercice trouvé. Vérifie que la fiche est bien lisible.','var(--orange)');resetBtn();return;}
-    showOcrReviewModal(exercises,idx);
+    // OCR photo2 (liens vidéos) si présente
+    let videoLinks=[];
+    if(cfg[idx].photo2){
+      try{
+        if(btn) btn.innerHTML='⏳ Lecture vidéos en cours...';
+        const vidText=await _ocrImage(cfg[idx].photo2);
+        videoLinks=parseVideoLinks(vidText);
+      }catch{}
+    }
+    showOcrReviewModal(exercises,idx,videoLinks);
     resetBtn();
   }catch(e){
     toast('Erreur : '+e.message,'var(--red)');resetBtn();
@@ -8234,15 +8292,18 @@ function parseWorkoutSheet(text){
 }
 
 // ======= MODAL DE RÉVISION AVANT IMPORT =======
-function showOcrReviewModal(exercises,idx){
-  // Construire les lignes éditables
-  const rows=exercises.map((ex,i)=>`
+function showOcrReviewModal(exercises,idx,videoLinks=[]){
+  // videoLinks : tableau plat de URLs extraits de photo2, distribués 1 par exo
+  const rows=exercises.map((ex,i)=>{
+    const v1=videoLinks[i*2]||'';
+    const v2=videoLinks[i*2+1]||'';
+    return`
     <div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)" id="ocr-ex-${i}">
       <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:8px">
         <span style="background:var(--red);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:800;flex-shrink:0">${i+1}</span>
         <input value="${ex.name.replace(/"/g,'&quot;')}" id="ocr-name-${i}" style="font-weight:700;font-size:13px;text-transform:uppercase;flex:1" placeholder="Nom exercice">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">
         <div>
           <div style="font-size:10px;color:var(--sub);margin-bottom:3px;font-weight:700">SÉRIES</div>
           <input type="number" value="${ex.series}" id="ocr-series-${i}" style="text-align:center;padding:8px" min="1" max="10">
@@ -8256,8 +8317,14 @@ function showOcrReviewModal(exercises,idx){
           <input value="${ex.repos}" id="ocr-repos-${i}" style="text-align:center;padding:8px" placeholder="01 min">
         </div>
       </div>
+      <div style="margin-bottom:4px">
+        <div style="font-size:9px;color:#4ade80;letter-spacing:1px;font-weight:700;margin-bottom:4px"> VIDÉO 1</div>
+        <input value="${v1}" id="ocr-v1-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px;margin-bottom:4px">
+        <div style="font-size:9px;color:#4ade80;letter-spacing:1px;font-weight:700;margin-bottom:4px"> VIDÉO 2 (optionnel)</div>
+        <input value="${v2}" id="ocr-v2-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px">
+      </div>
       <button onclick="this.closest('#ocr-ex-${i}').remove()" style="margin-top:8px;background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;font-family:Montserrat,sans-serif"> Supprimer</button>
-    </div>`).join('');
+    </div>`;}).join('');
 
   const html=`<div id="modal-overlay" onclick="" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
   <div style="background:#161616;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;animation:fadeIn .3s ease;max-height:90vh;overflow-y:auto">
@@ -8282,7 +8349,9 @@ function importOcrExercises(idx,maxN){
     const series=Math.max(1,parseInt(document.getElementById('ocr-series-'+i)?.value)||3);
     const reps=(document.getElementById('ocr-reps-'+i)?.value||'10').trim();
     const repos=(document.getElementById('ocr-repos-'+i)?.value||'90 sec').trim();
-    if(name) result.push({name,series,reps,repos,description:'',note:'',image:null});
+    const videoUrl=(document.getElementById('ocr-v1-'+i)?.value||'').trim();
+    const videoUrl2=(document.getElementById('ocr-v2-'+i)?.value||'').trim();
+    if(name) result.push({name,series,reps,repos,description:'',note:'',image:null,videoUrl,videoUrl2});
   }
   if(!result.length){toast('Aucun exercice à importer.','var(--orange)');return;}
   currentUser.sessions_config[idx].exercises=result;

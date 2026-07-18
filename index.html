@@ -2962,7 +2962,7 @@ function loadCoachHome(){
       c.profileWeight?c.profileWeight+' kg':null,
       c.age?c.age+' ans':null,
     ].filter(Boolean).join(' · ');
-    const objLine=c.objective?`<div style="font-size:10px;color:var(--red);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.objective)}</div>`:'';
+    const _objDisplay=c.objective||c.bilanGoals||'';const objLine=_objDisplay?`<div style="font-size:10px;color:var(--red);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(_objDisplay)}</div>`:'';
     const metaLine=metaParts?`<div style="font-size:10px;color:var(--sub);margin-top:1px">${metaParts}</div>`:'';
     return `<div class="client-row" onclick="openClientDetail('${c.id}')">
       <div class="avatar" style="width:44px;height:44px;font-size:15px;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
@@ -2986,7 +2986,7 @@ function loadCoachHome(){
       const ls=c.sessions?.length?'Dernière séance: '+ago(c.sessions[c.sessions.length-1].date):'Aucune séance';
       const avatarHtml=c.athletePhoto?`<img src="${c.athletePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:escapeHtml(ini(c.fname,c.lname));
       const metaParts=[c.gender?(c.gender==='M'?'Homme':'Femme'):null,c.profileWeight?c.profileWeight+' kg':null,c.age?c.age+' ans':null].filter(Boolean).join(' · ');
-      const objLine=c.objective?`<div style="font-size:10px;color:var(--red);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.objective)}</div>`:'';
+      const _objDisplay=c.objective||c.bilanGoals||'';const objLine=_objDisplay?`<div style="font-size:10px;color:var(--red);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(_objDisplay)}</div>`:'';
       const metaLine=metaParts?`<div style="font-size:10px;color:var(--sub);margin-top:1px">${metaParts}</div>`:'';
       return `<div class="client-row" onclick="openClientDetail('${c.id}')">
         <div class="avatar" style="width:44px;height:44px;font-size:15px;overflow:hidden;flex-shrink:0">${avatarHtml}</div>
@@ -3137,7 +3137,7 @@ function openClientDetail(cid,_refresh){
   document.getElementById('ccd-name').textContent=c.fname+' '+c.lname;
   document.getElementById('ccd-info').textContent=c._fromCode
     ?'Code généré le '+new Date(c._codeInfo.createdAt).toLocaleDateString('fr-FR')+' · Expire le '+new Date(c._codeInfo.expiry).toLocaleDateString('fr-FR')
-    :(c.objective||'Objectif non défini')+' • '+(c.level||'Niveau ?');
+    :(c.objective||c.bilanGoals||'Objectif non défini')+' • '+(c.level||'Niveau ?');
   const _oldSeen=(currentUser.seenBilans||{})[c.email]||0;
   const _newBil=!c._fromCode&&(c.bilans||[]).some(b=>b.date>_oldSeen);
   if(_newBil){
@@ -3155,7 +3155,8 @@ function openClientDetail(cid,_refresh){
     if(c.age) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Âge</span><br><strong>${c.age} ans</strong></div>`);
     if(c.gender) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Sexe</span><br><strong>${c.gender==='M'?'Homme':'Femme'}</strong></div>`);
     if(c.profileWeight) _bits.push(`<div style="font-size:11px"><span style="color:var(--sub)">Poids</span><br><strong>${c.profileWeight} kg</strong></div>`);
-    if(c.objective) _bits.push(`<div style="font-size:11px;flex-basis:100%"><span style="color:var(--sub)">Objectif</span><br><strong>${escapeHtml(c.objective)}</strong></div>`);
+    if(c.objective) _bits.push(`<div style="font-size:11px;flex-basis:100%"><span style="color:var(--sub)">Objectif profil</span><br><strong>${escapeHtml(c.objective)}</strong></div>`);
+    if(c.bilanGoals) _bits.push(`<div style="font-size:11px;flex-basis:100%"><span style="color:var(--sub)">Objectifs bilan départ</span><br><strong>${escapeHtml(c.bilanGoals)}</strong></div>`);
     if(_bits.length){_pd.innerHTML=_bits.join('');_pd.style.display='flex';}
     else _pd.style.display='none';
   }
@@ -5040,10 +5041,10 @@ function saveBilanFinal(){
   const bi=Object.assign({type:bilType,date:Date.now(),num:n},bilData);
   if(bilType==='depart'){
     currentUser.questionnaireComplete=true;
-    // Objectifs → currentUser.objective
+    // Objectifs bilan départ → bilanGoals (champ distinct de objective/profil)
     const goals=bilData['deb-goals'];
     if(goals&&(Array.isArray(goals)?goals.length:goals))
-      currentUser.objective=Array.isArray(goals)?goals.join(' · '):goals;
+      currentUser.bilanGoals=Array.isArray(goals)?goals.join(' · '):goals;
     // Niveau d'intensité → currentUser.level (proxy le plus proche du bilan)
     const _lvlMap={'Faible intensité':'Débutant (< 1 an)','Intensité Modérée':'Intermédiaire (1-3 ans)','Haute intensité':'Avancé (3-5 ans)'};
     const _lvl=bilData['deb-intensity-1'];

@@ -996,7 +996,7 @@ const COACH_PHOTO='icons/coach.jpg';
           <input type="file" id="prog-pdf-input" accept=".pdf,application/pdf" onchange="uploadCoachPdf(this)" style="display:none">
           <div id="prog-pdf-upload-zone" style="border:1px dashed #2a2a2a;border-radius:4px;padding:16px;text-align:center;transition:.2s" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='#2a2a2a'">
             <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--sub);font-weight:700;margin-bottom:4px">Importer un PDF</div>
-            <div style="font-size:11px;color:#444">Glisse ou clique — max 4 Mo</div>
+            <div style="font-size:11px;color:#444">Glisse ou clique — max 20 Mo</div>
           </div>
         </label>
 
@@ -1223,7 +1223,7 @@ const COACH_PHOTO='icons/coach.jpg';
             <div style="padding-left:8px">
               <div style="font-size:9px;color:#444;letter-spacing:2px;font-weight:800;text-transform:uppercase;margin-bottom:4px">Programme</div>
               <div style="font-size:13px;font-weight:800;color:#555">Importer mon programme PDF</div>
-              <div style="font-size:10px;color:#333;margin-top:2px">Max 4 Mo</div>
+              <div style="font-size:10px;color:#333;margin-top:2px">Max 20 Mo</div>
             </div>
             <input type="file" accept=".pdf" style="display:none" onchange="uploadAthletePdf(this)">
           </label>
@@ -2180,6 +2180,7 @@ const CLOUD={
       delete safe.pwd;delete safe.pwdHash;delete safe._st;delete safe._stb64;delete safe._sk;
       // seenBilans uses email addresses as keys (dots/@ invalid in Firebase) — strip before push
       delete safe.seenBilans;
+      delete safe.programPdf; // base64 blob — stocké dans Firebase Storage, pas dans RTDB
       if(safe.bilans) safe.bilans=await Promise.all(safe.bilans.map(async b=>{
         const cl={...b};
         for(const k of Object.keys(cl)){
@@ -2233,6 +2234,24 @@ const CLOUD={
     // Ne pousse QUE currentUser — évite d'écraser les données d'athlètes avec des copies obsolètes
     if(!currentUser?.email) return;
     await this._doPushOne(currentUser.email, users[currentUser.email]||currentUser);
+  },
+
+  // ── Firebase Storage : téléverse un PDF, retourne l'URL de téléchargement ──
+  _storageBucket:'repcore-sync.appspot.com',
+  async uploadPdf(emailKey,file){
+    const token=await this._getToken();
+    if(!token) throw new Error('Non connecté — impossible de téléverser le PDF.');
+    const path='pdfs/'+emailKey+'/programme.pdf';
+    const url='https://firebasestorage.googleapis.com/v0/b/'+this._storageBucket+'/o?name='+encodeURIComponent(path)+'&uploadType=media';
+    const res=await fetch(url,{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/pdf'},body:file});
+    if(!res.ok){
+      let msg=''+res.status;
+      try{const d=await res.json();msg=d.error?.message||msg;}catch{}
+      throw new Error('Firebase Storage : '+msg);
+    }
+    const d=await res.json();
+    const encodedName=encodeURIComponent(d.name);
+    return'https://firebasestorage.googleapis.com/v0/b/'+d.bucket+'/o/'+encodedName+'?alt=media&token='+d.downloadTokens;
   },
 
   // Fusionner un seul utilisateur cloud → localStorage
@@ -3770,7 +3789,7 @@ function openCoachProgram(){
 }
 
 function refreshPdfUI(c){
-  const hasPdf=c?.programPdf||c?.programPdfLink;
+  const hasPdf=c?.programPdf||c?.programPdfLink||c?.programPdfStorageUrl;
   const badge=document.getElementById('prog-pdf-badge');
   const current=document.getElementById('prog-pdf-current');
   const linkInput=document.getElementById('prog-pdf-link');
@@ -3788,15 +3807,18 @@ function refreshPdfUI(c){
   }
 }
 
-function uploadCoachPdf(input){
+async function uploadCoachPdf(input){
   const f=input.files[0];if(!f) return;
-  if(f.size>4*1024*1024){toast('PDF trop lourd (max 4 Mo). Utilise un lien Drive.','var(--orange)');return;}
-  const r=new FileReader();
-  r.onload=e=>{
-    const users=DB.get('users')||{};
-    const c=Object.values(users).find(u=>u.id===currentClientId);
-    if(!c) return;
-    c.programPdf=e.target.result;
+  if(f.size>20*1024*1024){toast('PDF trop lourd (max 20 Mo). Compresse ou utilise un lien Drive.','var(--orange)');return;}
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c) return;
+  const emailKey=c.email.toLowerCase().replace(/\./g,',');
+  toast('Téléversement en cours…');
+  try{
+    const storageUrl=await CLOUD.uploadPdf(emailKey,f);
+    c.programPdf=null;
+    c.programPdfStorageUrl=storageUrl;
     c.programPdfLink=null;
     c.programPdfName=f.name.replace(/\.pdf$/i,'');
     c.programPdfSize=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' Mo':(f.size/1024).toFixed(0)+' Ko';
@@ -3805,7 +3827,9 @@ function uploadCoachPdf(input){
     c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
     refreshPdfUI(c);
     toast(' PDF v'+c.programPdfVersion+' importé — '+c.programPdfName);
-  };r.readAsDataURL(f);
+  }catch(e){
+    toast('Échec de téléversement : '+(e.message||'Réessaie.'),'var(--orange)');
+  }
 }
 
 function saveCoachPdfLink(){
@@ -3847,7 +3871,7 @@ function renderClientPdfCard(c){
     el.innerHTML=`<div style="text-align:center;padding:12px 0;font-size:12px;color:var(--sub)">${c.fname} n'a pas encore créé son compte.<br>Le PDF sera disponible après son inscription.</div>`;
     return;
   }
-  const hasPdf=!!(c.programPdf||c.programPdfLink);
+  const hasPdf=!!(c.programPdf||c.programPdfLink||c.programPdfStorageUrl);
   const name=c.programPdfName||(c.programPdfLink?'Lien Drive':'Programme.pdf');
   const dt=c.programPdfDate?new Date(c.programPdfDate).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'})+' · v'+(c.programPdfVersion||1):'';
   const existHtml=hasPdf?`<div style="background:#151515;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
@@ -3863,7 +3887,7 @@ function renderClientPdfCard(c){
       <input type="file" accept=".pdf,application/pdf" onchange="uploadCoachPdfInline(this)" style="display:none">
       <div style="border:1px dashed #2a2a2a;border-radius:8px;padding:14px;text-align:center" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='#2a2a2a'">
         <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--sub);font-weight:700;margin-bottom:3px">${hasPdf?'Remplacer le PDF':'Importer un PDF'}</div>
-        <div style="font-size:11px;color:#444">Clique ou glisse — max 4 Mo</div>
+        <div style="font-size:11px;color:#444">Clique ou glisse — max 20 Mo</div>
       </div>
     </label>
     <div style="display:flex;gap:8px">
@@ -3871,15 +3895,18 @@ function renderClientPdfCard(c){
       <button onclick="saveCoachPdfLinkInline()" style="background:var(--red);border:none;color:#fff;border-radius:3px;padding:9px 14px;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1px;white-space:nowrap;text-transform:uppercase">Lier</button>
     </div>`;
 }
-function uploadCoachPdfInline(input){
+async function uploadCoachPdfInline(input){
   const f=input.files[0];if(!f) return;
-  if(f.size>4*1024*1024){toast('PDF trop lourd (max 4 Mo). Utilise un lien Drive.','var(--orange)');return;}
-  const r=new FileReader();
-  r.onload=e=>{
-    const users=DB.get('users')||{};
-    const c=Object.values(users).find(u=>u.id===currentClientId);
-    if(!c) return;
-    c.programPdf=e.target.result;
+  if(f.size>20*1024*1024){toast('PDF trop lourd (max 20 Mo). Compresse ou utilise un lien Drive.','var(--orange)');return;}
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c) return;
+  const emailKey=c.email.toLowerCase().replace(/\./g,',');
+  toast('Téléversement en cours…');
+  try{
+    const storageUrl=await CLOUD.uploadPdf(emailKey,f);
+    c.programPdf=null;
+    c.programPdfStorageUrl=storageUrl;
     c.programPdfLink=null;
     c.programPdfName=f.name.replace(/\.pdf$/i,'');
     c.programPdfSize=f.size>1024*1024?(f.size/1024/1024).toFixed(1)+' Mo':(f.size/1024).toFixed(0)+' Ko';
@@ -3888,7 +3915,9 @@ function uploadCoachPdfInline(input){
     c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
     toast('PDF v'+c.programPdfVersion+' importé — '+c.programPdfName);
     openClientDetail(currentClientId,true);
-  };r.readAsDataURL(f);
+  }catch(e){
+    toast('Échec de téléversement : '+(e.message||'Réessaie.'),'var(--orange)');
+  }
 }
 function saveCoachPdfLinkInline(){
   const link=(document.getElementById('ccc-pdf-link').value||'').trim();
@@ -4079,7 +4108,7 @@ function loadClientHome(){
   const freshU=users[currentUser.email]||currentUser;
   const pdfCard=document.getElementById('clh-pdf-card');
   const pdfEmpty=document.getElementById('clh-pdf-empty');
-  const hasPdf=!!(freshU.programPdf||freshU.programPdfLink);
+  const hasPdf=!!(freshU.programPdf||freshU.programPdfLink||freshU.programPdfStorageUrl);
   if(pdfCard) pdfCard.style.display=hasPdf?'block':'none';
   if(pdfEmpty) pdfEmpty.style.display=hasPdf?'none':'block';
   if(hasPdf){
@@ -4170,19 +4199,21 @@ function openHomePdf(){
   currentUser.pdfLastSeen=Date.now();saveUser();
   const badge=document.getElementById('clh-pdf-new-badge');
   if(badge) badge.style.display='none';
-  if(freshU.programPdf){
+  const src=freshU.programPdfStorageUrl||freshU.programPdfLink||freshU.programPdf;
+  if(src){
     const w=window.open();
-    if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${freshU.programPdf}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);w.document.close();}
-  } else if(freshU.programPdfLink){
-    window.open(freshU.programPdfLink,'_blank');
+    if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${src}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);w.document.close();}
   }
 }
-function uploadAthletePdf(input){
+async function uploadAthletePdf(input){
   const f=input.files[0];if(!f) return;
-  if(f.size>4*1024*1024){toast('PDF trop lourd (max 4 Mo)','var(--orange)');return;}
-  const r=new FileReader();
-  r.onload=e=>{
-    currentUser.programPdf=e.target.result;
+  if(f.size>20*1024*1024){toast('PDF trop lourd (max 20 Mo)','var(--orange)');return;}
+  const emailKey=currentUser.email.toLowerCase().replace(/\./g,',');
+  toast('Téléversement en cours…');
+  try{
+    const storageUrl=await CLOUD.uploadPdf(emailKey,f);
+    currentUser.programPdf=null;
+    currentUser.programPdfStorageUrl=storageUrl;
     currentUser.programPdfLink=null;
     currentUser.programPdfName=f.name.replace(/\.pdf$/i,'');
     currentUser.programPdfSize=Math.round(f.size/1024)+'Ko';
@@ -4191,8 +4222,9 @@ function uploadAthletePdf(input){
     saveUser();
     toast('Programme importé — v'+(currentUser.programPdfVersion));
     loadClientHome();
-  };
-  r.readAsDataURL(f);
+  }catch(e){
+    toast('Échec : '+(e.message||'Réessaie.'),'var(--orange)');
+  }
 }
 function getProgram(){
   const users=DB.get('users')||{};
@@ -4563,7 +4595,7 @@ function _renderProgExercisesInto(el){
   const prog=getProgram();
   if(prog._isDefault){
     const u=(DB.get('users')||{})[currentUser.email]||currentUser;
-    if(u.programPdf||u.programPdfLink){el.innerHTML='';return;}
+    if(u.programPdf||u.programPdfLink||u.programPdfStorageUrl){el.innerHTML='';return;}
     el.innerHTML=`
       <div style="text-align:center;padding:32px 24px 16px">
         <div style="font-size:36px;margin-bottom:12px">⏳</div>
@@ -4604,16 +4636,24 @@ function loadProgramView(){
 }
 
 function openPdfNewTab(){
-  if(!currentUser.programPdf) return;
+  const src=currentUser.programPdfStorageUrl||currentUser.programPdfLink||currentUser.programPdf;
+  if(!src) return;
   const w=window.open();
-  if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${currentUser.programPdf}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);w.document.close();}
+  if(w){w.document.write(`<html><body style="margin:0;background:#000"><iframe src="${src}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);w.document.close();}
 }
-function downloadPdf(){
-  if(!currentUser.programPdf) return;
-  const a=document.createElement('a');
-  a.href=currentUser.programPdf;
-  a.download=(currentUser.programPdfName||'programme')+'.pdf';
-  a.click();
+async function downloadPdf(){
+  const src=currentUser.programPdfStorageUrl||currentUser.programPdf;
+  if(!src) return;
+  try{
+    if(src.startsWith('data:')){
+      const a=document.createElement('a');a.href=src;a.download=(currentUser.programPdfName||'programme')+'.pdf';a.click();
+    } else {
+      const res=await fetch(src);const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=(currentUser.programPdfName||'programme')+'.pdf';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),15000);
+    }
+  }catch{toast('Téléchargement échoué.','var(--orange)');}
 }
 
 // ======= WORKOUT =======
@@ -8862,22 +8902,26 @@ function renderPaypalButton(planId,coachId){
       sessionStorage.setItem('rc_paypal_return','1');
       return actions.subscription.create({'plan_id':planId});
     },
-    onApprove:function(data){
+    onApprove:async function(data){
       const pendingStr=sessionStorage.getItem('pendingCodePayload');
       const pending=pendingStr?JSON.parse(pendingStr):null;
-      currentUser.status='AUTONOMIE_PREMIUM';
-      currentUser.paymentStatus='active';
-      currentUser.paypalSubscriptionId=data.subscriptionID;
-      if(pending){
-        currentUser.coachId=pending.coachId||null;
-        currentUser.coachName=pending.coachName||'';
-        sessionStorage.removeItem('pendingCodePayload');
+      toast('Vérification du paiement…');
+      try{
+        await CLOUD._callFn('verifyPaypalSubscription',{
+          subscriptionId:data.subscriptionID,
+          coachId:pending?.coachId||null,
+          coachName:pending?.coachName||null,
+        });
+        if(pending) sessionStorage.removeItem('pendingCodePayload');
+        // Lire l'état canonique écrit par le serveur (pas faire confiance au payload local)
+        await CLOUD.syncUser(currentUser.email);
+        const users=DB.get('users')||{};
+        if(users[currentUser.email]){currentUser=users[currentUser.email];DB.set('session',currentUser);}
+        toast('Abonnement activé ! Bienvenue sur RepCore ✓');
+        setTimeout(()=>{loadClientHome();},1500);
+      }catch(e){
+        toast('Échec de vérification PayPal : '+(e.message||'Réessaie ou contacte le support.'),'var(--orange)');
       }
-      const users=DB.get('users')||{};
-      users[currentUser.email]=currentUser;
-      DB.set('users',users);DB.set('session',currentUser);
-      toast('Abonnement activé ! Bienvenue sur RepCore ✓');
-      setTimeout(()=>{loadClientHome();},1500);
     },
     onError:function(err){
       toast('Erreur paiement. Reessaie.');

@@ -5165,7 +5165,7 @@ function requestBilanNotifPermission(){
   }
   if(Notification.permission==='granted'){
     currentUser._notifEnabled=true;saveUser();
-    scheduleSwNotif();
+    scheduleSwNotif();scheduleSuppNotif();
     toast(' Rappels déjà activés !');return;
   }
   if(Notification.permission==='denied'){
@@ -5174,7 +5174,7 @@ function requestBilanNotifPermission(){
   Notification.requestPermission().then(p=>{
     if(p==='granted'){
       currentUser._notifEnabled=true;saveUser();
-      scheduleSwNotif();
+      scheduleSwNotif();scheduleSuppNotif();
       toast(' Rappels activés ! Tu seras notifié chaque samedi de bilan à 7h.');
     } else {
       toast('Rappels non activés.');
@@ -5215,6 +5215,22 @@ async function scheduleWoNotif(){
     const reg=await navigator.serviceWorker.ready;
     if('periodicSync' in reg){
       try{await reg.periodicSync.register('wo-reminder',{minInterval:8*3600*1000});}catch(e){}
+    }
+  }catch(e){}
+}
+async function scheduleSuppNotif(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    const list=_suppStore().filter(s=>s.active!==false);
+    const c=await caches.open('repcore-sw-data');
+    await c.put('/supp-reminders',new Response(JSON.stringify({
+      enabled:list.length>0,
+      fname:currentUser.fname||'',
+      items:list.map(s=>({id:s.id,name:s.name,timings:s.timings||[],dosage_quantity:s.dosage_quantity,dosage_unit:s.dosage_unit}))
+    }),{headers:{'Content-Type':'application/json'}}));
+    const reg=await navigator.serviceWorker.ready;
+    if('periodicSync' in reg){
+      try{await reg.periodicSync.register('supp-reminder',{minInterval:2*3600*1000});}catch(e){}
     }
   }catch(e){}
 }
@@ -6558,6 +6574,7 @@ function saveSuppEntry(){
   if(idx>=0&&idx<list.length){list[idx]={...list[idx],...entry,id:list[idx].id};}
   else{list.push(entry);}
   saveUser();
+  if(currentUser._notifEnabled) scheduleSuppNotif();
   toast(idx>=0?'Complément mis à jour ✓':'Complément ajouté ✓');
   loadSupplements();
 }
@@ -6567,6 +6584,7 @@ function deleteSuppEntry(idx){
   if(idx<0||idx>=list.length) return;
   list.splice(idx,1);
   saveUser();
+  if(currentUser._notifEnabled) scheduleSuppNotif();
   toast('Complément supprimé');
   loadSupplements();
 }

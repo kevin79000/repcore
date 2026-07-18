@@ -1,4 +1,4 @@
-const CACHE = 'repcore-v200';
+const CACHE = 'repcore-v201';
 const SW_DATA = 'repcore-sw-data'; // persistent across updates — not wiped by activate
 const ASSETS = ['./manifest.json', './icons/icon-192x192.png', './icons/icon-512x512.png', './icons/logo.png', './data/ciqual.json'];
 
@@ -56,6 +56,7 @@ async function swSet(key, val) {
 self.addEventListener('periodicsync', e => {
   if (e.tag === 'bilan-reminder') e.waitUntil(swCheckAndNotify());
   if (e.tag === 'wo-reminder') e.waitUntil(swCheckWoReminder());
+  if (e.tag === 'supp-reminder') e.waitUntil(swCheckSuppReminders());
 });
 
 async function swCheckAndNotify() {
@@ -118,6 +119,47 @@ async function swCheckWoReminder() {
     requireInteraction: true,
     data: { url: './?wo=1' }
   });
+}
+
+// ─── Supplement reminders ───────────────────────────────────────────────────
+async function swCheckSuppReminders() {
+  const sched = await swGet('/supp-reminders');
+  if (!sched?.enabled || !sched?.items?.length) return;
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const h = now.getHours();
+  const lastNotif = sched.lastNotif || {};
+
+  const TIMING_HOURS = {
+    'jeun': 6, 'matin': 7, 'midi': 12, 'apres-midi': 15,
+    'avant-entrainement': 17, 'intra': 18, 'apres-entrainement': 20,
+    'soir': 19, 'coucher': 21, 'toutes-4h': 8
+  };
+
+  const updatedLastNotif = { ...lastNotif };
+  let changed = false;
+
+  for (const [timingId, targetHour] of Object.entries(TIMING_HOURS)) {
+    if (h < targetHour || h >= targetHour + 3) continue;
+    if (lastNotif[timingId] === todayStr) continue;
+    const due = sched.items.filter(s => (s.timings || []).includes(timingId));
+    if (!due.length) continue;
+    updatedLastNotif[timingId] = todayStr;
+    changed = true;
+    const names = due.map(s => s.name + (s.dosage_quantity ? ' — ' + s.dosage_quantity + (s.dosage_unit ? ' ' + s.dosage_unit : '') : '')).join(' • ');
+    const pref = sched.fname ? sched.fname + ', c' : 'C';
+    await self.registration.showNotification('RepCore — Compléments 💊', {
+      body: pref + "'est l'heure de prendre : " + names,
+      icon: './icons/icon-192x192.png',
+      badge: './icons/icon-192x192.png',
+      tag: 'supp-' + timingId,
+      requireInteraction: false,
+      data: { url: './' }
+    });
+  }
+
+  if (changed) await swSet('/supp-reminders', { ...sched, lastNotif: updatedLastNotif });
 }
 
 // ─── Server push (future backend / VAPID integration) ──────────────────────

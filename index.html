@@ -4452,9 +4452,23 @@ function removeSessionPhoto2(i){
   saveUser();loadSessionManager();
 }
 function parseVideoLinks(text){
-  // Extrait tous les liens YouTube dans l'ordre (youtu.be et youtube.com)
-  const raw=text.match(/https?:\/\/(?:youtu\.be\/|(?:www\.)?youtube\.com\/(?:watch\?v=|shorts\/))[a-zA-Z0-9_\-]+/g)||[];
-  return [...new Set(raw)];
+  // Corrige les artéfacts OCR courants dans les URLs
+  let t=text
+    .replace(/https?\s*:\s*\/\s*\//gi,'https://')
+    .replace(/youtu\s*[.,]\s*be/gi,'youtu.be')
+    .replace(/youtube\s*[.,]\s*com/gi,'youtube.com')
+    .replace(/watch\s*\?\s*v\s*=/gi,'watch?v=');
+  const urls=[];
+  // Youtu.be et youtube.com avec protocole
+  const p1=t.match(/https?:\/\/(?:www\.)?(?:youtu\.be|youtube\.com\/(?:watch\?v=|shorts\/))[a-zA-Z0-9_\-]{5,}/gi)||[];
+  urls.push(...p1);
+  // youtu.be sans protocole (OCR a mangé "https://")
+  const p2=t.match(/(?<![a-zA-Z0-9\/])youtu\.be\/([a-zA-Z0-9_\-]{5,})/gi)||[];
+  for(const m of p2){
+    const id=m.split('/').pop();
+    if(id&&!urls.some(u=>u.includes(id))) urls.push('https://youtu.be/'+id);
+  }
+  return[...new Set(urls)];
 }
 
 function openSessionExercises(idx){
@@ -8146,7 +8160,7 @@ function clearProgPhoto(){
 }
 function loadProgPhoto2(input){
   const f=input.files[0];if(!f) return;
-  compressImage(f,1200,0.75,data=>{
+  compressImage(f,1600,0.92,data=>{
     progPhoto2Data=data;
     document.getElementById('prog-photo2-ph').style.display='none';
     document.getElementById('prog-photo2-ready').style.display='block';
@@ -8170,7 +8184,13 @@ async function analyzeProgPhotos(){
     let videoLinks=[];
     if(progPhoto2Data){
       if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
-      try{const vidText=await _ocrImage(progPhoto2Data);videoLinks=parseVideoLinks(vidText);}catch{}
+      try{
+        const vidText=await _ocrImage(progPhoto2Data);
+        videoLinks=parseVideoLinks(vidText);
+        if(!videoLinks.length) toast('Photo vidéos : aucun lien YouTube reconnu — vérifie que les URLs sont lisibles sur la photo.','var(--orange)');
+      }catch(e){
+        toast('Erreur lecture photo vidéos : '+(e.message||'réessaie'),'var(--red)');
+      }
     }
     const idx=window._editingSessionIdx;
     showOcrReviewModal(exercises,typeof idx==='number'?idx:null,videoLinks);

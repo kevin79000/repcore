@@ -4417,8 +4417,8 @@ function renderWoEx(){
   const cycleLabel=getCycleLabel();
   // Calcul charge suggérée = last 0-RIR weight de la séance précédente
   const baseWeight=getLastZeroRIRWeight(ex.name);
-  const sug=baseWeight?Math.round(baseWeight/2.5)*2.5:prev?calcSug(prev.weight,prev.reps,prev.rir,ex.reps,ex.rir):null;
-  const cycleWeight=sug?Math.round(sug*cycle.factor/2.5)*2.5:null;
+  const sug=baseWeight?roundWeight(baseWeight+2.5):prev?calcSug(prev.weight,prev.reps,prev.rir,ex.reps,ex.rir):null;
+  const cycleWeight=sug?roundWeight(sug*cycle.factor):null;
   const isFemme=currentUser.gender==='femme';
   const showCycleCol=isFemme&&cycle.factor!==1.0;
 
@@ -4715,12 +4715,13 @@ function updateStreak(){
   else currentUser.streak=1;
   currentUser.lastSession=Date.now();
 }
+function roundWeight(w){return w<20?Math.ceil(w/1.25)*1.25:Math.round(w/2.5)*2.5;}
 function calcSug(pw,pr,prr,tr,trir){
   const pW=parseFloat(pw),pR=parseFloat(pr),pRIR=parseFloat(prr),tR=parseFloat(tr)||pR,tRIR=parseFloat(trir)||0;
   if(!pW||pW<=0) return null;
   const e1rm=pW*(1+pR/30)/(1+pRIR*0.025);
   const sug=e1rm*(1+tR/30)/(1+(tRIR*0.025+0.33));
-  return Math.round(sug/2.5)*2.5;
+  return roundWeight(sug);
 }
 function getPrevPerf(name){
   if(!currentUser.sessions?.length) return null;

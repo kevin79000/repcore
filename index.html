@@ -6105,12 +6105,25 @@ function onFjSearch(val){
     _loadCiqual().then(()=>onFjSearch(val));
     return;
   }
-  const words=_fjNorm(q).split(/\s+/).filter(w=>w.length>1);
+  const normQ=_fjNorm(q);
+  const words=normQ.split(/\s+/).filter(w=>w.length>1);
   if(!words.length){el.innerHTML='';return;}
-  const res=_ciqualDB.filter(f=>words.every(w=>f.s.includes(w))).slice(0,50);
+  const res=_ciqualDB.filter(f=>words.every(w=>f.s.includes(w))).slice(0,80);
   document.getElementById('fj-recent-section').innerHTML='';
   if(!res.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--sub);font-size:12px">Aucun résultat pour "'+escapeHtml(q)+'"</div>';return;}
-  el.innerHTML=res.map(_fjResultHtml).join('');
+  const isGeneric=words.length<=2;
+  const scored=res.map(f=>{
+    const nn=_fjNorm(f.n);
+    const ng=_fjNorm(f.g||'');
+    let sc=0;
+    if(nn.startsWith(normQ)) sc+=100;
+    else if(nn.startsWith(words[0])) sc+=50;
+    if(isGeneric&&/viande|volaille|gibier/.test(ng)) sc+=30;
+    if(/plat/.test(ng)) sc-=50;
+    return{f,sc};
+  });
+  scored.sort((a,b)=>b.sc-a.sc);
+  el.innerHTML=scored.slice(0,50).map(x=>_fjResultHtml(x.f)).join('');
 }
 
 function selectFjFood(id){

@@ -8364,10 +8364,10 @@ function parseWorkoutSheet(text){
 
 // ======= MODAL DE RÉVISION AVANT IMPORT =======
 function showOcrReviewModal(exercises,idx,videoLinks=[]){
-  // videoLinks : tableau plat de URLs extraits de photo2, distribués 1 par exo
+  // videoLinks : 1 URL par exercice en ordre (une ligne tableau = un exo)
   const rows=exercises.map((ex,i)=>{
-    const v1=videoLinks[i*2]||'';
-    const v2=videoLinks[i*2+1]||'';
+    const v1=videoLinks[i]||'';
+    const desc=(ex.description||'').replace(/"/g,'&quot;');
     return`
     <div style="background:var(--card2);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)" id="ocr-ex-${i}">
       <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:8px">
@@ -8388,11 +8388,15 @@ function showOcrReviewModal(exercises,idx,videoLinks=[]){
           <input value="${ex.repos}" id="ocr-repos-${i}" style="text-align:center;padding:8px" placeholder="01 min">
         </div>
       </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:9px;color:var(--sub);letter-spacing:1px;font-weight:700;margin-bottom:3px">DESCRIPTION / TECHNIQUE</div>
+        <textarea id="ocr-desc-${i}" rows="2" style="font-size:11px;padding:7px 10px;line-height:1.5;resize:vertical" placeholder="Technique d'exécution...">${desc}</textarea>
+      </div>
       <div style="margin-bottom:4px">
         <div style="font-size:9px;color:#4ade80;letter-spacing:1px;font-weight:700;margin-bottom:4px"> VIDÉO 1</div>
-        <input value="${v1}" id="ocr-v1-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px;margin-bottom:4px">
+        <input value="${v1}" id="ocr-v1-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px;margin-bottom:6px">
         <div style="font-size:9px;color:#4ade80;letter-spacing:1px;font-weight:700;margin-bottom:4px"> VIDÉO 2 (optionnel)</div>
-        <input value="${v2}" id="ocr-v2-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px">
+        <input value="" id="ocr-v2-${i}" placeholder="https://youtu.be/..." style="font-size:11px;padding:7px 10px">
       </div>
       <button onclick="this.closest('#ocr-ex-${i}').remove()" style="margin-top:8px;background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;font-family:Montserrat,sans-serif"> Supprimer</button>
     </div>`;}).join('');
@@ -8420,9 +8424,10 @@ function importOcrExercises(idx,maxN){
     const series=Math.max(1,parseInt(document.getElementById('ocr-series-'+i)?.value)||3);
     const reps=(document.getElementById('ocr-reps-'+i)?.value||'10').trim();
     const repos=(document.getElementById('ocr-repos-'+i)?.value||'90 sec').trim();
+    const description=(document.getElementById('ocr-desc-'+i)?.value||'').trim();
     const videoUrl=(document.getElementById('ocr-v1-'+i)?.value||'').trim();
     const videoUrl2=(document.getElementById('ocr-v2-'+i)?.value||'').trim();
-    if(name) result.push({name,series,reps,repos,description:'',note:'',image:null,videoUrl,videoUrl2});
+    if(name) result.push({name,series,reps,repos,description,note:'',image:null,videoUrl,videoUrl2});
   }
   if(!result.length){toast('Aucun exercice à importer.','var(--orange)');return;}
   currentUser.sessions_config[idx].exercises=result;

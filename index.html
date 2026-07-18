@@ -1211,6 +1211,7 @@ const COACH_PHOTO='icons/coach.jpg';
             <div style="font-size:18px;color:#333;flex-shrink:0">→</div>
           </div>
           <div id="clh-pdf-new-badge" style="display:none;background:var(--green);color:#000;font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;padding:4px 12px;text-align:center">Mis à jour</div>
+          <button onclick="triggerAthletePdfParse()" style="width:100%;background:linear-gradient(180deg,#0a1a00,#080f00);border:1px solid #1a3a0a;border-top:none;border-radius:0;padding:10px;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;color:#4ade80;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"> Lire & importer les séances</button>
           <label style="display:block;background:#0a0a0a;border:1px solid #1a1a1a;border-top:none;border-radius:0 0 4px 4px;padding:8px 14px;font-size:10px;color:#444;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;cursor:pointer;text-align:center">
             Remplacer le PDF
             <input type="file" accept=".pdf" style="display:none" onchange="uploadAthletePdf(this)">
@@ -3882,7 +3883,8 @@ function renderClientPdfCard(c){
     </div>
     <button onclick="removeCoachPdf()" style="background:none;border:none;color:#444;font-size:18px;cursor:pointer;padding:4px;flex-shrink:0">×</button>
   </div>`:'';
-  el.innerHTML=`${existHtml}
+  const parseBtn=hasPdf?`<button onclick="triggerPdfProgrammeImport(${JSON.stringify(c.email)})" style="width:100%;margin-bottom:10px;padding:11px;background:linear-gradient(180deg,#0a1a00,#080f00);border:1px solid #1a3a0a;border-radius:6px;color:#4ade80;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:7px"> Lire PDF → Importer les séances</button>`:'';
+  el.innerHTML=`${existHtml}${parseBtn}
     <label style="display:block;cursor:pointer;margin-bottom:10px">
       <input type="file" accept=".pdf,application/pdf" onchange="uploadCoachPdfInline(this)" style="display:none">
       <div style="border:1px dashed #2a2a2a;border-radius:8px;padding:14px;text-align:center" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='#2a2a2a'">
@@ -8287,6 +8289,155 @@ function importOcrExercises(idx,maxN){
   saveUser();closeModal();
   toast(' '+result.length+' exercices importés !');
   loadSessionManager();
+}
+
+// ======= LECTURE PDF → SÉANCES =======
+let _pendingPdfSeances=null, _pendingPdfTarget=null;
+
+async function _loadPdfJs(){
+  if(window.pdfjsLib) return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=res;s.onerror=rej;document.head.appendChild(s);
+  });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+async function _pdfPageToText(page){
+  const content=await page.getTextContent({normalizeWhitespace:true});
+  if(!content.items.length) return '';
+  // Regrouper les items par ligne (même Y à 3pt près), de haut en bas
+  const sorted=[...content.items].sort((a,b)=>{
+    const dy=b.transform[5]-a.transform[5];
+    return Math.abs(dy)>3?dy:a.transform[4]-b.transform[4];
+  });
+  const lines=[];let cur=null;
+  for(const it of sorted){
+    const y=Math.round(it.transform[5]);
+    if(!cur||Math.abs(cur.y-y)>3){cur={y,text:it.str};lines.push(cur);}
+    else cur.text+=' '+it.str;
+  }
+  return lines.map(l=>l.text.trim()).filter(l=>l).join('\n');
+}
+
+async function parsePdfProgramme(source){
+  await _loadPdfJs();
+  let data;
+  if(source instanceof File||source instanceof Blob){
+    data=await source.arrayBuffer();
+  } else if(typeof source==='string'&&source.startsWith('data:')){
+    const b64=source.split(',')[1];
+    const bin=atob(b64),bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    data=bytes.buffer;
+  } else {
+    const r=await fetch(source);
+    if(!r.ok) throw new Error('Impossible de télécharger le PDF ('+r.status+').');
+    data=await r.arrayBuffer();
+  }
+  const pdf=await pdfjsLib.getDocument({data}).promise;
+  const seances=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const text=await _pdfPageToText(await pdf.getPage(p));
+    const m=text.match(/S[ÉE]ANCE\s+(\d+)\s*[:\-–]\s*([^\n]+)/i);
+    if(m){
+      const exercises=parseWorkoutSheet(text);
+      seances.push({name:'SÉANCE '+m[1]+' : '+m[2].trim().toUpperCase(),exercises});
+    }
+  }
+  return seances;
+}
+
+async function triggerPdfProgrammeImport(email){
+  const users=DB.get('users')||{};
+  const c=users[email];
+  if(!c) return;
+  const source=c.programPdfStorageUrl||c.programPdfLink||c.programPdf;
+  if(!source){toast('Aucun PDF lié à cet athlète.','var(--orange)');return;}
+  toast('Lecture du PDF en cours…');
+  try{
+    const seances=await parsePdfProgramme(source);
+    if(!seances.length){toast('Aucune séance "SÉANCE X :" trouvée dans ce PDF.','var(--orange)');return;}
+    showPdfSeancesModal(seances,email);
+  }catch(e){toast('Erreur lecture PDF : '+(e.message||'Réessaie.'),'var(--red)');}
+}
+
+async function triggerAthletePdfParse(){
+  const users=DB.get('users')||{};
+  const freshU=users[currentUser.email]||currentUser;
+  const source=freshU.programPdfStorageUrl||freshU.programPdfLink||freshU.programPdf;
+  if(!source){toast('Aucun PDF disponible.','var(--orange)');return;}
+  toast('Lecture du PDF en cours…');
+  try{
+    const seances=await parsePdfProgramme(source);
+    if(!seances.length){toast('Aucune séance "SÉANCE X :" trouvée dans ce PDF.','var(--orange)');return;}
+    showPdfSeancesModal(seances,currentUser.email);
+  }catch(e){toast('Erreur lecture PDF : '+(e.message||'Réessaie.'),'var(--red)');}
+}
+
+function showPdfSeancesModal(seances,targetEmail){
+  _pendingPdfSeances=seances;_pendingPdfTarget=targetEmail;
+  const rows=seances.map((s,si)=>`
+    <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;margin-bottom:10px;overflow:hidden">
+      <div style="padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div>
+          <div style="font-size:11px;font-weight:800;letter-spacing:.5px">${escapeHtml(s.name)}</div>
+          <div style="font-size:10px;color:var(--sub);margin-top:2px">${s.exercises.length} exercice${s.exercises.length>1?'s':''} détecté${s.exercises.length>1?'s':''}</div>
+        </div>
+        <div style="color:#444;font-size:14px;flex-shrink:0">▸</div>
+      </div>
+      <div style="display:none;border-top:1px solid #1a1a1a;padding:8px 14px 12px">
+        ${s.exercises.map((ex,ei)=>`
+          <div style="padding:6px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid #161616">
+            <div style="width:20px;height:20px;background:var(--red);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;flex-shrink:0">${ei+1}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(ex.name)}</div>
+              <div style="font-size:10px;color:var(--sub)">${ex.series} × ${escapeHtml(String(ex.reps))} · repos ${escapeHtml(ex.repos)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+  document.getElementById('modal-overlay')?.remove();
+  const html=`<div id="modal-overlay" onclick="" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
+  <div onclick="event.stopPropagation()" style="background:#161616;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <h2>${seances.length} séance${seances.length>1?'s':''} détectée${seances.length>1?'s':''}</h2>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Clique sur une séance pour voir les exercices. Les jours de pratique seront à définir ensuite dans le programme.</p>
+    ${rows}
+    <button class="btn btn-red" style="margin-top:4px" onclick="importPdfSeances()">Importer les ${seances.length} séance${seances.length>1?'s':''}</button>
+    <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal()">Annuler</button>
+  </div></div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function importPdfSeances(){
+  const seances=_pendingPdfSeances;
+  const email=_pendingPdfTarget;
+  if(!seances?.length||!email) return;
+  const users=DB.get('users')||{};
+  const u=users[email];
+  if(!u){toast('Athlète introuvable.','var(--red)');return;}
+  if(!u.sessions_config) u.sessions_config=Array.from({length:7},(_,i)=>({day:DAYS[i],name:'',exercises:[],active:false,notes:''}));
+  seances.forEach((s,i)=>{
+    if(i<u.sessions_config.length){
+      u.sessions_config[i].name=s.name;
+      u.sessions_config[i].exercises=s.exercises;
+      u.sessions_config[i].active=true;
+    }
+  });
+  users[email]=u;
+  DB.set('users',users);
+  CLOUD.pushOne(email,u);
+  if(email===currentUser?.email){
+    currentUser.sessions_config=u.sessions_config;
+    DB.set('session',currentUser);
+  }
+  closeModal();
+  toast(seances.length+' séances importées dans le programme  !');
+  if(email===currentUser?.email) loadSessionManager();
 }
 
 // ======= COACH: AJOUTER ATHLÈTE DIRECTEMENT =======

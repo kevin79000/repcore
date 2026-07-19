@@ -8335,7 +8335,7 @@ async function analyzeProgPhotos(){
           <div id="modal-overlay" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
           <div style="background:#161616;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <b style="color:#f87171">OCR — texte brut (v231)</b>
+              <b style="color:#f87171">OCR — texte brut (v232)</b>
               <button onclick="document.getElementById('modal-overlay').remove()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer">✕</button>
             </div>
             <p style="font-size:11px;color:var(--sub);margin-bottom:8px">Envoie-moi ce texte :</p>
@@ -8458,10 +8458,11 @@ async function analyzePhotoWithClaude(idx){
     const exercises=parseWorkoutSheet(rawText);
     if(!exercises.length){toast('Aucun exercice trouvé. Vérifie que la fiche est bien lisible.','var(--orange)');resetBtn();return;}
     let videoLinks=[];
-    if(cfg[idx].photo2){
+    const _p2=cfg[idx].photo2||localStorage.getItem('rc_p2_'+(currentUser?.email||'')+'_'+idx)||null;
+    if(_p2){
       try{
         if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
-        const p2=cfg[idx].photo2;
+        const p2=_p2;
         const r1=await resizeForOcr(p2,1500).catch(()=>p2);
         const r2=await resizeForOcr(p2,800).catch(()=>r1);
         const [t1,t2,t3]=await Promise.all([
@@ -8635,7 +8636,7 @@ function showOcrReviewModal(exercises,idx,videoLinks=[]){
       <h2> ${exercises.length} exercices lus</h2>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer"></button>
     </div>
-    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v231</span></p>
+    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v232</span></p>
     <div id="ocr-rows">${rows}</div>
     <button class="btn btn-red" style="margin-top:4px" onclick="importOcrExercises(${idx},${exercises.length})"> Importer dans la séance</button>
     <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal()">Annuler</button>

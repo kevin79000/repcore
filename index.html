@@ -4305,6 +4305,7 @@ function loadClientHome(){
       </div>
     </div>`;
   }
+  _selDay=null;_migrateFoundationIfNeeded();
   const progEl=document.getElementById('clh-prog-exercises');
   if(progEl) _renderProgExercisesInto(progEl);
 }
@@ -4776,11 +4777,76 @@ function launchWorkout(sessConfig){
 }
 
 // ======= PROGRAM VIEW =======
+let _selDay=null;
+function _setWeekDay(i){_selDay=i;if(window._weekProgEl)_renderProgExercisesInto(window._weekProgEl);}
+function _migrateFoundationIfNeeded(){
+  const g=currentUser._evol_gender;
+  if(g!=='H'&&g!=='F') return;
+  const sc=currentUser.sessions_config;
+  if(!sc||sc.some(s=>s._foundation)) return;
+  const fa=sc.find(s=>s.active&&s.exercises?.length);
+  if(!fa||fa.name||fa.exercises[0]?.name!==defEx[0]?.name) return;
+  currentUser.sessions_config=null;initSessionsConfig();
+}
+function _renderExCard(ex,idx){
+  const pr=parseReps(ex.reps);
+  const badge=pr.type==='degressive'?`<span style="background:#3a0a00;color:#fca5a5;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase">DÉGRESSIVE</span>`:
+    pr.type==='unilateral'?`<span style="background:#0a1a30;color:#93c5fd;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase">UNILATÉRAL</span>`:'';
+  return `<div class="exercise-card"><div style="padding:12px 14px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #181818">
+    <div style="width:28px;height:28px;background:var(--red);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;color:#fff">${idx+1}</div>
+    <div style="flex:1">
+      <div class="ex-name">${escapeHtml(ex.name)}</div>
+      <div class="ex-detail" style="margin-top:3px">${ex.series} séries · ${escapeHtml(ex.reps)} reps${ex.repos?' · '+escapeHtml(ex.repos):''}</div>
+      ${badge?`<div style="margin-top:5px">${badge}</div>`:''}
+      ${ex.description?`<div style="font-size:11px;color:#666;margin-top:6px;line-height:1.5;border-left:2px solid #2a2a2a;padding-left:8px">${escapeHtml(ex.description)}</div>`:''}
+      ${(ex.videoUrl||ex.videoUrl2)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        ${ex.videoUrl?`<a href="${safeUrl(ex.videoUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 1</a>`:''}
+        ${ex.videoUrl2?`<a href="${safeUrl(ex.videoUrl2)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 2</a>`:''}
+      </div>`:''}
+    </div>
+  </div></div>`;
+}
 function _renderProgExercisesInto(el){
   const prog=getProgram();
   if(prog._isDefault){
     const u=(DB.get('users')||{})[currentUser.email]||currentUser;
     if(u.programPdf||u.programPdfLink||u.programPdfStorageUrl){el.innerHTML='';return;}
+    const sc=currentUser.sessions_config;
+    const hasActive=sc&&sc.some(s=>s.active&&s.exercises?.length);
+    if(hasActive){
+      window._weekProgEl=el;
+      const today=new Date().getDay();
+      const todayIdx=today===0?6:today-1;
+      let sel=_selDay!=null?_selDay:-1;
+      if(sel===-1) sel=sc.findIndex((s,i)=>i===todayIdx&&s.active&&s.exercises?.length);
+      if(sel===-1) sel=sc.findIndex(s=>s.active&&s.exercises?.length);
+      _selDay=sel;
+      const isFoundation=sc.some(s=>s._foundation);
+      const selS=sel>=0?sc[sel]:{};
+      el.innerHTML=`
+        <div style="margin-bottom:14px">
+          <div style="font-size:9px;color:var(--red);letter-spacing:3px;font-weight:800;text-transform:uppercase;margin-bottom:6px">Mon programme</div>
+          <div style="font-size:16px;font-weight:900;letter-spacing:-0.3px">${isFoundation?'Programme Fondation':'Semaine d\'entraînement'}</div>
+          ${(selS.notes&&isFoundation)?`<p class="sub" style="margin-top:5px;font-size:12px;line-height:1.6">${escapeHtml(selS.notes)}</p>`:''}
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+          ${sc.map((s,i)=>{
+            const isToday=i===todayIdx;
+            const isSel=i===sel;
+            const bg=isSel?'var(--red)':s.active?'#2a0000':'#141414';
+            const col=isSel||s.active?'#fff':'#555';
+            const bord=isToday?'2px solid '+(isSel?'#fff':'var(--red)'):'2px solid transparent';
+            return `<div onclick="_setWeekDay(${i})" style="flex-shrink:0;width:36px;height:36px;border-radius:3px;background:${bg};border:${bord};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;cursor:pointer;color:${col}">${DAY_ICONS[i]}</div>`;
+          }).join('')}
+        </div>
+        <div style="font-size:11px;color:var(--sub);font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">${selS.active&&selS.exercises?.length?DAYS[sel]+(selS.name?' — '+escapeHtml(selS.name):''):DAYS[sel]||''} ${(!selS.active||!selS.exercises?.length)?'— Repos':''}
+        </div>
+        ${selS.active&&selS.exercises?.length
+          ?selS.exercises.map((ex,idx)=>_renderExCard(ex,idx)).join('')
+          :`<div style="text-align:center;padding:24px 16px;color:var(--sub);font-size:13px">Jour de repos</div>`}
+      `;
+      return;
+    }
     el.innerHTML=`
       <div style="text-align:center;padding:32px 24px 16px">
         <div style="font-size:36px;margin-bottom:12px">⏳</div>
@@ -4795,26 +4861,7 @@ function _renderProgExercisesInto(el){
       <div style="font-size:16px;font-weight:900;letter-spacing:-0.3px">${escapeHtml(prog.name)}</div>
       ${prog.notes?`<p class="sub" style="margin-top:5px;font-size:12px;line-height:1.6">${escapeHtml(prog.notes)}</p>`:''}
     </div>
-    ${prog.exercises.map((ex,idx)=>{
-      const pr=parseReps(ex.reps);
-      const badge=pr.type==='degressive'?`<span style="background:#3a0a00;color:#fca5a5;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase">DÉGRESSIVE</span>`:
-        pr.type==='unilateral'?`<span style="background:#0a1a30;color:#93c5fd;padding:2px 7px;border-radius:2px;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase">UNILATÉRAL</span>`:'';
-      return `<div class="exercise-card">
-        <div style="padding:12px 14px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #181818">
-          <div style="width:28px;height:28px;background:var(--red);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;color:#fff">${idx+1}</div>
-          <div style="flex:1">
-            <div class="ex-name">${escapeHtml(ex.name)}</div>
-            <div class="ex-detail" style="margin-top:3px">${ex.series} séries · ${escapeHtml(ex.reps)} reps${ex.repos?' · '+escapeHtml(ex.repos):''}</div>
-            ${badge?`<div style="margin-top:5px">${badge}</div>`:''}
-            ${ex.description?`<div style="font-size:11px;color:#444;margin-top:6px;line-height:1.5;border-left:2px solid #2a2a2a;padding-left:8px">${escapeHtml(ex.description)}</div>`:''}
-            ${(ex.videoUrl||ex.videoUrl2)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
-              ${ex.videoUrl?`<a href="${safeUrl(ex.videoUrl)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 1</a>`:''}
-              ${ex.videoUrl2?`<a href="${safeUrl(ex.videoUrl2)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;background:#1a0000;border:1px solid #3a0a0a;border-radius:6px;padding:5px 10px;color:#f87171;font-size:10px;font-weight:800;text-decoration:none;letter-spacing:1px">▶ VIDÉO 2</a>`:''}
-            </div>`:''}
-          </div>
-        </div>
-      </div>`;
-    }).join('')}`;
+    ${prog.exercises.map((ex,idx)=>_renderExCard(ex,idx)).join('')}`;
 }
 function loadProgramView(){
   const users=DB.get('users')||{};

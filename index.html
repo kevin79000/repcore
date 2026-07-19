@@ -8445,13 +8445,18 @@ async function analyzePhotoWithClaude(idx){
     if(!rawText){toast('Texte illisible. Essaie une photo plus nette et bien cadrée.','var(--orange)');resetBtn();return;}
     const exercises=parseWorkoutSheet(rawText);
     if(!exercises.length){toast('Aucun exercice trouvé. Vérifie que la fiche est bien lisible.','var(--orange)');resetBtn();return;}
-    // OCR photo2 (liens vidéos) si présente
     let videoLinks=[];
     if(cfg[idx].photo2){
       try{
-        if(btn) btn.innerHTML='⏳ Lecture vidéos en cours...';
-        const vidText=await _ocrImage(cfg[idx].photo2);
-        videoLinks=parseVideoLinks(vidText);
+        if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
+        const p2=cfg[idx].photo2;
+        const preproc=await preprocessPhoto2ForOcr(p2).catch(()=>p2);
+        const [t1,t2,t3]=await Promise.all([
+          _ocrImage(p2,{isTable:false,engine:1,language:'eng'}).catch(()=>''),
+          _ocrImage(p2,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
+          _ocrImage(preproc,{isTable:false,engine:1,language:'eng'}).catch(()=>'')
+        ]);
+        videoLinks=parseVideoLinks(t1+'\n'+t2+'\n'+t3);
       }catch{}
     }
     showOcrReviewModal(exercises,idx,videoLinks);
@@ -8509,7 +8514,15 @@ function parseWorkoutSheet(text){
 
       // Détection PUIS (dégressive)
       const pm=line.match(puisRe);
-      if(pm){reps=pm[1]+' PUIS '+pm[2];continue;}
+      if(pm){reps=pm[1];continue;}
+
+      // Dropset slashes : "12/10/8" → premier chiffre
+      const dsm=line.match(/\b(\d+)\s*\/\s*\d+/);
+      if(dsm){reps=dsm[1];continue;}
+
+      // Dégressive 3+ nombres "15-12-10" → premier chiffre
+      const dg3m=line.match(/\b(\d+)\s*[-–]\s*\d+\s*[-–]\s*\d+/);
+      if(dg3m){reps=dg3m[1];continue;}
 
       // Détection Par Jambe/Bras
       const pjm=line.match(parJambeRe);

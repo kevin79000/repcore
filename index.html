@@ -8547,9 +8547,16 @@ function parseWorkoutSheet(text){
       if(big.length&&reps==='10') reps=String(Math.min(...big));
     }
 
+    // Technique dégressive : "Faire 8 répétitions...puis...faire 20..." dans la description
+    // → override même si collectedNums a déjà mis "20"
+    const descText=descParts.join(' ');
+    const puisDescRe=/\b(\d+)\s+r[eé]p[eé]titions?[^.]*?puis[^.]*?(\d+)/i;
+    const pm2=descText.match(puisDescRe);
+    if(pm2) reps=pm2[1];
+
     // Si pas encore de reps trouvés : chercher dans la description un nombre final
     if(reps==='10'){
-      const lastNum=descParts.join(' ').match(/\b(\d+)\b\s*(?:reps?|répétitions?)?$/i);
+      const lastNum=descText.match(/\b(\d+)\b\s*(?:reps?|répétitions?)?$/i);
       if(lastNum) reps=lastNum[1];
     }
 
@@ -8605,7 +8612,7 @@ function showOcrReviewModal(exercises,idx,videoLinks=[]){
       <h2> ${exercises.length} exercices lus</h2>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer"></button>
     </div>
-    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v227</span></p>
+    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v228</span></p>
     <div id="ocr-rows">${rows}</div>
     <button class="btn btn-red" style="margin-top:4px" onclick="importOcrExercises(${idx},${exercises.length})"> Importer dans la séance</button>
     <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal()">Annuler</button>

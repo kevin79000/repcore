@@ -8547,7 +8547,7 @@ function parseWorkoutSheet(text){
       const small=collectedNums.filter(n=>n>=2&&n<=6);
       const big=collectedNums.filter(n=>n>6||!small.includes(n));
       if(small.length) series=small[0];
-      if(big.length&&reps==='10') reps=String(big[big.length-1]);
+      if(big.length&&reps==='10') reps=String(big[0]);
     }
 
     // Si pas encore de reps trouvés : chercher dans la description un nombre final

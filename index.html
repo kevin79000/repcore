@@ -8189,42 +8189,50 @@ async function importVideoLinksFromPdf(input){
   input.value='';
   toast('⏳ Lecture du PDF...','var(--green)');
   try{
-    await _loadPdfJs();
     const buf=await file.arrayBuffer();
+
+    // Méthode 1 : lecture brute des octets PDF
+    // Les URLs dans les annotations PDF sont stockées en texte clair non compressé
+    const rawText=new TextDecoder('latin1').decode(buf);
+    const fromRaw=parseVideoLinks(rawText);
+
+    // Méthode 2 : PDF.js — texte visible + annotations hyperlien
+    await _loadPdfJs();
     const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
-    let allText='';
+    let pdfText='';
     const annotUrls=[];
     for(let p=1;p<=pdf.numPages;p++){
       const page=await pdf.getPage(p);
-      // 1. Texte visible
       const content=await page.getTextContent();
-      allText+=content.items.map(it=>it.str).join(' ')+'\n';
-      // 2. Annotations hyperlien (les liens cliquables rouges dans le PDF)
+      pdfText+=content.items.map(it=>it.str).join(' ')+'\n';
       try{
         const anns=await page.getAnnotations();
         for(const a of anns){
-          const u=a.url||(a.action&&a.action.url)||'';
+          const u=a.url||a.unsafeUrl||(a.action&&(a.action.url||a.action.URI))||'';
           if(u) annotUrls.push(u);
         }
       }catch{}
     }
-    // Cherche d'abord dans les annotations (plus fiable), puis dans le texte
-    const fromText=parseVideoLinks(allText);
-    const fromAnnot=annotUrls.filter(u=>u.includes('youtu.be')||u.includes('youtube.com'));
-    const links=[...new Set([...fromAnnot,...fromText])];
+    const fromText=parseVideoLinks(pdfText);
+    const fromAnnot=annotUrls.filter(u=>u&&(u.includes('youtu.be')||u.includes('youtube.com')));
+
+    const links=[...new Set([...fromRaw,...fromAnnot,...fromText])];
+
     if(links.length){
       _pdfVideoLinks=links;
       progPhoto2Data='pdf';
       document.getElementById('prog-photo2-ph').style.display='none';
       document.getElementById('prog-photo2-ready').style.display='block';
       const lbl=document.getElementById('prog-photo2-label');
-      if(lbl) lbl.textContent='✓ '+links.length+' lien(s) YouTube trouvé(s) dans le PDF';
+      if(lbl) lbl.textContent='✓ '+links.length+' lien(s) YouTube trouvé(s)';
       toast(links.length+' lien(s) YouTube importé(s) ✓');
     } else {
-      toast('Aucun lien YouTube dans ce PDF (ni texte ni hyperlien).','var(--orange)');
+      // Debug : aide au diagnostic
+      const dbg='brut:'+fromRaw.length+' annot:'+fromAnnot.length+'('+annotUrls.length+') txt:'+fromText.length;
+      toast('Aucun lien trouvé — '+dbg,'var(--orange)');
     }
   }catch(e){
-    toast('Erreur lecture PDF : '+(e.message||'réessaie'),'var(--red)');
+    toast('Erreur : '+(e.message||'réessaie'),'var(--red)');
   }
 }
 async function analyzeProgPhotos(){

@@ -8302,11 +8302,11 @@ async function analyzeProgPhotos(){
       if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
       try{
         // 3 passes en parallèle : original×2 moteurs + image prétraitée (rouge→noir, fond→blanc)
-        const preproc=await preprocessPhoto2ForOcr(progPhoto2Data).catch(()=>progPhoto2Data);
+        const preproc=await scaleImage2x(progPhoto2Data).catch(()=>progPhoto2Data);
         const [t1,t2,t3]=await Promise.all([
           _ocrImage(progPhoto2Data,{isTable:false,engine:1,language:'eng'}).catch(()=>''),
           _ocrImage(progPhoto2Data,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
-          _ocrImage(preproc,{isTable:false,engine:1,language:'eng'}).catch(()=>'')
+          _ocrImage(preproc,{isTable:false,engine:2,language:'eng'}).catch(()=>'')
         ]);
         const combined=t1+'\n'+t2+'\n'+t3;
         videoLinks=parseVideoLinks(combined);
@@ -8381,26 +8381,16 @@ function updateCalcTable(){
 // ======= OCR AUTOMATIQUE : LECTURE PHOTO PROGRAMME =======
 
 // Préprocessing : image binaire pure (texte→noir, fond→blanc)
-// Rouge saturé OU pixels clairs = texte ; tout le reste = fond blanc
-function preprocessPhoto2ForOcr(dataUrl){
+function scaleImage2x(dataUrl){
   return new Promise(resolve=>{
     const img=new Image();
     img.onload=()=>{
       const c=document.createElement('canvas');
-      c.width=img.width; c.height=img.height;
+      c.width=img.width*2; c.height=img.height*2;
       const ctx=c.getContext('2d');
-      ctx.drawImage(img,0,0);
-      const d=ctx.getImageData(0,0,c.width,c.height);
-      const px=d.data;
-      for(let i=0;i<px.length;i+=4){
-        const r=px[i],g=px[i+1],b=px[i+2];
-        // Texte = rouge saturé OU pixels blancs/clairs
-        const isText=(r>140&&r>g*1.5&&r>b*1.5)||(r>190&&g>190&&b>190);
-        const v=isText?0:255;
-        px[i]=px[i+1]=px[i+2]=v; px[i+3]=255;
-      }
-      ctx.putImageData(d,0,0);
-      resolve(c.toDataURL('image/png')); // PNG lossless, pas de compression JPEG
+      ctx.imageSmoothingEnabled=false;
+      ctx.drawImage(img,0,0,c.width,c.height);
+      resolve(c.toDataURL('image/jpeg',0.92));
     };
     img.onerror=()=>resolve(dataUrl);
     img.src=dataUrl;
@@ -8448,11 +8438,11 @@ async function analyzePhotoWithClaude(idx){
       try{
         if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
         const p2=cfg[idx].photo2;
-        const preproc=await preprocessPhoto2ForOcr(p2).catch(()=>p2);
+        const preproc=await scaleImage2x(p2).catch(()=>p2);
         const [t1,t2,t3]=await Promise.all([
           _ocrImage(p2,{isTable:false,engine:1,language:'eng'}).catch(()=>''),
           _ocrImage(p2,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
-          _ocrImage(preproc,{isTable:false,engine:1,language:'eng'}).catch(()=>'')
+          _ocrImage(preproc,{isTable:false,engine:2,language:'eng'}).catch(()=>'')
         ]);
         videoLinks=parseVideoLinks(t1+'\n'+t2+'\n'+t3);
       }catch{}

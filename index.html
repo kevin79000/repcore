@@ -5230,32 +5230,21 @@ const BIL_STEPS=[
   ()=>bSec('Ressenti & Modifications',
     bLbl('Quel est ton niveau de motivation en ce moment (sur une échelle de 1 à 10) :')+
     `<div>${bC('bil-motivation',['Moins de 2/10','Entre 3 et 4/10','Entre 5 et 6/10','Entre 7 et 8/10','9 ou 10/10'])}</div>`+
-    bLbl("Y'a t-il des changements que tu souhaiterais faire dans le programme alimentaire ? ")+
-    `<div>${bC('bil-diet-change',['Oui','Non'])}</div>`+
-    bLbl('Si oui, précisez les ajustements que vous souhaitez :')+bTA('bil-diet-detail','Décris les changements souhaités...')+
-    bLbl("As tu des difficulté à ressentir certains muscles pendant l'entraînement ?")+
-    `<div>${bC('bil-muscle-feel',['Oui','Non'])}</div>`+
-    bLbl('Si oui, lesquels ?')+bT('bil-muscle-feel-which','Ex: Dorsaux, pectoraux...')
+    bLbl('Souhaiterais tu des modifications dans ton programme ?')+bTA('bil-prog-modifs','Décris librement tes souhaits de modifications...')
   ),
   // Step 4 : Sommeil & Stress
   ()=>bSec('Sommeil & Stress',
     bLbl('Qualité du sommeil : Comment dors-tu en ce moment ?')+
     `<div>${bC('bil-sleep-quality',['Très bien, je me sens reposé(e)','Correct, quelques nuits agitées','Mal, j\'ai du mal à me reposer'])}</div>`+
-    bLbl('Nombre d\'heures de sommeil en moyenne par nuit :')+bQ('bil-sleep-hours')+
     bLbl('Es tu stressé en ce moment?')+
     `<div>${bC('bil-stress',['Pas du tout','Un peu','Beaucoup','Énormément'])}</div>`+
-    bLbl('Si tu es stressé, peux-tu me donner des précisions sur ce qui te préoccupe en ce moment ?')+bTA('bil-stress-detail','Ce qui te préoccupe...')+
-    bLbl('Est-ce que le stress affecte tes séances ?')+
-    `<div>${bC('bil-stress-affect',['Oui','Non'])}</div>`+
-    bLbl('Si oui, peux-tu préciser comment cela t\'impacte ?')+bT('bil-stress-impact','Comment ça t\'impacte...')
+    bLbl('Si tu es stressé, peux-tu me donner des précisions sur ce qui te préoccupe en ce moment ?')+bTA('bil-stress-detail','Ce qui te préoccupe...')
   ),
   // Step 5 : Objectifs
   ()=>bSec('Objectifs à venir ',
-    bLbl('Tes objectifs pour les semaines à venir :')+bTA('bil-goals-next','Décris tes objectifs (facultatif)...')+
     bLbl('As-tu de nouveaux objectifs ou des priorités spécifiques ?')+
     `<div>${bC('bil-new-goals',['Oui','Non'])}</div>`+
-    bLbl('Si oui, lesquels ?')+bTA('bil-new-goals-detail','Tes nouveaux objectifs...')+
-    bLbl('Des défis à surmonter ou des ajustements spécifiques que tu souhaites pour avancer ?')+bTA('bil-challenges','Tes défis et ajustements souhaités...')
+    bLbl('Si oui, lesquels ?')+bTA('bil-new-goals-detail','Tes nouveaux objectifs...')
   ),
   // Step 6 : Photos de progression
   ()=>`<div style="margin-bottom:22px"><div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #181818">Photos de progression </div>`+
@@ -5284,9 +5273,7 @@ const DEB_STEPS=[
     bLbl('Quelle est ta profession ? ')+bT('deb-job','Ex: Infirmier, Comptable...')+
     bLbl('Et ton rythme de travail ?')+
     `<div>${bC('deb-work-rhythm',['Plein temps','Partiel','En arrêt'])}</div>`+
-    bLbl('As-tu des problèmes de santé ou des blessures ?  (Si oui, précise)')+bT('deb-health','Ex: Hernie discale, entorse...')+
-    bLbl('Quelle est ta préférence pour communiquer ? ')+
-    `<div>${bC('deb-comm',['WhatsApp','Instagram','Email','SMS'])}</div>`
+    bLbl('As-tu des problèmes de santé ou des blessures ?  (Si oui, précise)')+bT('deb-health','Ex: Hernie discale, entorse...')
   ),
   // Step 2 : Mensurations initiales
   ()=>bSec('Mensurations initiales ',
@@ -5319,14 +5306,7 @@ const DEB_STEPS=[
     `<div>${bC('deb-intensity-1',['Faible intensité','Intensité Modérée','Haute intensité'])}</div>`+
     bLbl("A quel niveau estime tu l'intensité de ta pratique sportive 2")+
     `<div>${bC('deb-intensity-2',['Faible intensité','Intensité Modérée','Haute intensité'])}</div>`+
-    bLbl("A quel niveau estime tu l'intensité de ta pratique sportive 3")+
-    `<div>${bC('deb-intensity-3',['Faible intensité','Intensité Modérée','Haute intensité'])}</div>`+
     bLbl('As-tu des antécédents sportifs ? ')+bT('deb-history','Ex: Football 5 ans, boxe 2 ans...')+
-    bLbl("Quels formats d'entraînement as-tu déjà testés ?")+
-    `<div>${bC('deb-formats',['Full-body','Half-body','Push-pull-leg','Split','Aucun','Autre'],true)}</div>`+
-    bLbl('D\'après toi, quels sont tes muscles en points forts ? ')+bT('deb-strong-muscles','Ex: Quadriceps, dos...')+
-    bLbl('Et ceux en points faibles ? ')+bT('deb-weak-muscles','Ex: Épaules, mollets...')+
-    bLbl('As-tu des difficultés à ressentir certains muscles ? (Si oui, lesquels)')+bT('deb-muscle-feel','Ex: Pectoraux, dorsaux...')+
     bLbl('Quand souhaites tu t\'entraîner ? ⏰')+
     `<div>${bC('deb-training-time',['Matin','Après-midi','Soir'],true)}</div>`
   ),
@@ -5340,16 +5320,11 @@ const DEB_STEPS=[
     `<div>${bC('deb-meals-day',['3','4','5','6'])}</div>`+
     bLbl('Aliments que tu adores ? ')+bT('deb-food-love','Ex: Riz, poulet, banane...')+
     bLbl('Aliments que tu détestes? ')+bT('deb-food-hate','Ex: Brocolis, poivrons...')+
-    bLbl("Prépares tu tes repas à l'avance dans des Tupperware? Si non, pourquoi?")+bT('deb-meal-prep','Oui / Non, parce que...')+
-    bLbl('Combien de repas à l\'extérieur de chez toi par semaine ? (repas au travail ou en famille)')+bT('deb-outside-meals','Ex: 3 repas...')+
-    bLbl('Nombre de portions de fruits et légumes consommées par jour ? ')+
-    `<div>${bC('deb-fruits-veg',['0','1 à 2','3 à 4','5 et plus'])}</div>`+
     bLbl('Quantité d\'eau bue quotidiennement ?  (en litres)')+
     `<div>${bC('deb-water',['Moins de 1L','Entre 1 à 2L','Entre 3 à 4L','5L et plus'])}</div>`+
     bLbl('Est-ce que tu suis tes calories et macronutriments au quotidien ? ')+
     `<div>${bC('deb-track-macros',['Oui','Non'])}</div>`+
     bLbl('Si oui, combien de calories consommes-tu chaque jour, et dans quel but ? (ex. sèche, prise de masse, maintien)')+bT('deb-calories','Ex: 2200 kcal sèche...')+
-    bLbl('Budget courses par semaine ?  (Inclut repas pris à l\'extérieur)')+bT('deb-budget','Ex: 80€/semaine...')+
     bLbl('Souhaites tu consommer des compléments alimentaires ?')+
     `<div>${bC('deb-supplements',['Oui','Non'])}</div>`+
     bLbl('Si tu en consommes déjà, lesquels prends tu et pourquoi?')+bT('deb-supps-detail','Ex: Whey, créatine...')

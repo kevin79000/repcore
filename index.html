@@ -9009,6 +9009,43 @@ async function _ocrImage(dataUrl,opts={}){
   return(d.ParsedResults?.[0]?.ParsedText||'').trim();
 }
 
+// Tente d'associer chaque URL à l'exercice dont le numéro apparaît dans les lignes
+// proches dans le texte OCR brut. Retombe sur l'ordre positionnel si aucun numéro trouvé.
+function _buildVideoLinksArray(rawText, links, exercises){
+  if(!links.length) return [];
+  const exNumRe=/^\s*(\d+)\s*[\)\.]/;
+  const simpleNumRe=/^\s*(\d+)\s*$/;
+  const lines=rawText.split('\n').map(l=>l.trim());
+  const numMap={};
+  let anyMatched=false;
+  for(const url of links){
+    // Cherche l'ID vidéo (plus stable que l'URL complète après normalisation OCR)
+    const idM=url.match(/(?:youtu\.be\/|watch\?v=|shorts\/)([a-zA-Z0-9_\-]{5,})/i);
+    const vid=idM?idM[1]:null;
+    let urlLineIdx=-1;
+    for(let li=0;li<lines.length;li++){
+      const ln=lines[li].replace(/\s+/g,'').toLowerCase();
+      if(vid&&ln.includes(vid.toLowerCase())){urlLineIdx=li;break;}
+      if(urlLineIdx===-1&&(ln.includes('youtu.be')||ln.includes('youtube.com'))) urlLineIdx=li;
+    }
+    if(urlLineIdx===-1) continue;
+    // Scan ±3 lignes pour un numéro d'exercice
+    let foundNum=null;
+    for(let li=Math.max(0,urlLineIdx-3);li<=Math.min(lines.length-1,urlLineIdx+3);li++){
+      const m=lines[li].match(exNumRe);
+      if(m){foundNum=parseInt(m[1]);break;}
+      const sm=lines[li].match(simpleNumRe);
+      if(sm){const n=parseInt(sm[1]);if(n>=1&&n<=exercises.length){foundNum=n;break;}}
+    }
+    if(foundNum!==null&&foundNum>=1&&foundNum<=exercises.length){
+      if(!numMap[foundNum]) numMap[foundNum]=url;
+      anyMatched=true;
+    }
+  }
+  if(anyMatched) return exercises.map((_,i)=>numMap[i+1]||'');
+  return links; // fallback positionnel inchangé
+}
+
 async function analyzePhotoWithClaude(idx){
   const cfg=currentUser.sessions_config;
   const photo=cfg[idx].photo;
@@ -9021,7 +9058,12 @@ async function analyzePhotoWithClaude(idx){
     if(!rawText){toast('Texte illisible. Essaie une photo plus nette et bien cadrée.','var(--orange)');resetBtn();return;}
     const exercises=parseWorkoutSheet(rawText);
     if(!exercises.length){toast('Aucun exercice trouvé. Vérifie que la fiche est bien lisible.','var(--orange)');resetBtn();return;}
-    let videoLinks=[];
+
+    // Liens détectés dans la photo principale
+    const mainLinks=parseVideoLinks(rawText);
+
+    // Liens depuis photo2 (document séparé) — comportement inchangé
+    let photo2Links=[];
     const _p2=cfg[idx].photo2||localStorage.getItem('rc_p2_'+(currentUser?.email||'')+'_'+idx)||null;
     if(_p2){
       try{
@@ -9036,9 +9078,17 @@ async function analyzePhotoWithClaude(idx){
           _ocrImage(r2,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
           _ocrImage(r3,{isTable:false,engine:2,language:'eng'}).catch(()=>'')
         ]);
-        videoLinks=parseVideoLinks(t1+'\n'+t2+'\n'+t3+'\n'+t4);
+        photo2Links=parseVideoLinks(t1+'\n'+t2+'\n'+t3+'\n'+t4);
       }catch{}
     }
+
+    // Fusion (dédoublonnage) — photo principale d'abord, photo2 en complément
+    const allLinks=[...new Set([...mainLinks,...photo2Links])];
+
+    // Matching numéro→exercice sur le texte brut de la photo principale,
+    // fallback positionnel si aucun numéro détectable
+    const videoLinks=_buildVideoLinksArray(rawText,allLinks,exercises);
+
     showOcrReviewModal(exercises,idx,videoLinks);
     resetBtn();
   }catch(e){

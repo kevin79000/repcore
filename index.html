@@ -9029,13 +9029,20 @@ function _buildVideoLinksArray(rawText, links, exercises){
       if(urlLineIdx===-1&&(ln.includes('youtu.be')||ln.includes('youtube.com'))) urlLineIdx=li;
     }
     if(urlLineIdx===-1) continue;
-    // Scan ±3 lignes pour un numéro d'exercice
+    // Cherche un numéro d'exercice en partant de la ligne de l'URL elle-même, puis en
+    // s'écartant ±1, ±2, ±3 — le plus proche gagne (et non le premier trouvé dans l'ordre
+    // croissant, qui vole souvent le numéro d'une URL voisine quand plusieurs liens numérotés
+    // se suivent de près dans la section vidéos).
     let foundNum=null;
-    for(let li=Math.max(0,urlLineIdx-3);li<=Math.min(lines.length-1,urlLineIdx+3);li++){
-      const m=lines[li].match(exNumRe);
-      if(m){foundNum=parseInt(m[1]);break;}
-      const sm=lines[li].match(simpleNumRe);
-      if(sm){const n=parseInt(sm[1]);if(n>=1&&n<=exercises.length){foundNum=n;break;}}
+    for(let d=0;d<=3&&foundNum===null;d++){
+      const candidates=d===0?[urlLineIdx]:[urlLineIdx-d,urlLineIdx+d];
+      for(const li of candidates){
+        if(li<0||li>=lines.length) continue;
+        const m=lines[li].match(exNumRe);
+        if(m){foundNum=parseInt(m[1]);break;}
+        const sm=lines[li].match(simpleNumRe);
+        if(sm){const n=parseInt(sm[1]);if(n>=1&&n<=exercises.length){foundNum=n;break;}}
+      }
     }
     if(foundNum!==null&&foundNum>=1&&foundNum<=exercises.length){
       if(!numMap[foundNum]) numMap[foundNum]=url;
@@ -9059,15 +9066,32 @@ async function analyzePhotoWithClaude(idx){
     const exercises=parseWorkoutSheet(rawText);
     if(!exercises.length){toast('Aucun exercice trouvé. Vérifie que la fiche est bien lisible.','var(--orange)');resetBtn();return;}
 
-    // Liens détectés dans la photo principale
-    const mainLinks=parseVideoLinks(rawText);
+    // Le mode "tableau + français" utilisé pour rawText lit très mal les URL (colonnes
+    // fusionnées, accents ajoutés sur du texte anglais). On relit la MÊME photo principale
+    // avec les réglages qui marchent pour les liens (comme pour photo2 ci-dessous).
+    let mainLinkText='';
+    try{
+      if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
+      const m1=await resizeForOcr(photo,1500).catch(()=>photo);
+      const m2=await resizeForOcr(photo,800).catch(()=>m1);
+      const m3=await preprocessRedOnDark(photo).catch(()=>m1);
+      const [mt1,mt2,mt3,mt4]=await Promise.all([
+        _ocrImage(m1,{isTable:false,engine:1,language:'eng'}).catch(()=>''),
+        _ocrImage(m1,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
+        _ocrImage(m2,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
+        _ocrImage(m3,{isTable:false,engine:2,language:'eng'}).catch(()=>'')
+      ]);
+      mainLinkText=mt1+'\n'+mt2+'\n'+mt3+'\n'+mt4;
+    }catch{}
+    const mainLinks=parseVideoLinks(rawText+'\n'+mainLinkText);
 
     // Liens depuis photo2 (document séparé) — comportement inchangé
     let photo2Links=[];
+    let p2Text='';
     const _p2=cfg[idx].photo2||localStorage.getItem('rc_p2_'+(currentUser?.email||'')+'_'+idx)||null;
     if(_p2){
       try{
-        if(btn) btn.innerHTML='⏳ Lecture liens vidéos...';
+        if(btn) btn.innerHTML='⏳ Lecture liens vidéos (2)...';
         const p2=_p2;
         const r1=await resizeForOcr(p2,1500).catch(()=>p2);
         const r2=await resizeForOcr(p2,800).catch(()=>r1);
@@ -9078,16 +9102,19 @@ async function analyzePhotoWithClaude(idx){
           _ocrImage(r2,{isTable:false,engine:2,language:'eng'}).catch(()=>''),
           _ocrImage(r3,{isTable:false,engine:2,language:'eng'}).catch(()=>'')
         ]);
-        photo2Links=parseVideoLinks(t1+'\n'+t2+'\n'+t3+'\n'+t4);
+        p2Text=t1+'\n'+t2+'\n'+t3+'\n'+t4;
+        photo2Links=parseVideoLinks(p2Text);
       }catch{}
     }
 
     // Fusion (dédoublonnage) — photo principale d'abord, photo2 en complément
     const allLinks=[...new Set([...mainLinks,...photo2Links])];
 
-    // Matching numéro→exercice sur le texte brut de la photo principale,
-    // fallback positionnel si aucun numéro détectable
-    const videoLinks=_buildVideoLinksArray(rawText,allLinks,exercises);
+    // Matching numéro→exercice : cherche le contexte de chaque URL dans TOUT le texte
+    // OCR disponible (tableau + passes liens), pas seulement rawText, pour ne pas rater
+    // le numéro d'exercice quand l'URL n'apparaît que dans la passe "liens".
+    const combinedText=rawText+'\n'+mainLinkText+'\n'+p2Text;
+    const videoLinks=_buildVideoLinksArray(combinedText,allLinks,exercises);
 
     showOcrReviewModal(exercises,idx,videoLinks);
     resetBtn();
@@ -9113,9 +9140,14 @@ function parseWorkoutSheet(text){
   const seriesColRe=/\b([2-6])\s*$/;                  // chiffre en fin de ligne = séries (2-6)
 
   // On collecte les blocs par exercice numéroté
+  // Une fois la section "vidéos" atteinte, on arrête : sinon chaque ligne "1) https://..."
+  // de cette section est prise pour un nouvel exercice (nom = l'URL elle-même).
+  const videoSectionRe=/VID[EÉ]OS?|M[EÉ]THODES?\s*ET\s*EX[EÉ]CUTIONS?|LIENS?\s*YOUTUBE/i;
+  const bareUrlLineRe=/^\s*(?:\d+\s*[\)\.]\s*)?(?:https?:\/\/|www\.)/i;
   const blocks=[];
   let curBlock=null;
   for(const line of lines){
+    if(videoSectionRe.test(line)||bareUrlLineRe.test(line)) break;
     const nm=line.match(exNumRe);
     if(nm){
       if(curBlock) blocks.push(curBlock);

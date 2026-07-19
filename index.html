@@ -4464,12 +4464,14 @@ function uploadSessionPhoto2(idx,input){
   compressImage(f,1200,0.75,data=>{
     if(!currentUser.sessions_config) initSessionsConfig();
     currentUser.sessions_config[idx].photo2=data;
+    try{localStorage.setItem('rc_p2_'+currentUser.email+'_'+idx,data);}catch(e){}
     saveUser();loadSessionManager();toast(' Photo vidéos enregistrée !');
   });
 }
 function removeSessionPhoto2(i){
   if(!currentUser.sessions_config) return;
   currentUser.sessions_config[i].photo2=null;
+  try{localStorage.removeItem('rc_p2_'+currentUser.email+'_'+i);}catch(e){}
   saveUser();loadSessionManager();
 }
 function parseVideoLinks(text){
@@ -4502,7 +4504,8 @@ function openSessionExercises(idx){
   document.getElementById('prog-warmup').value=cfg[idx].warmup??currentUser._defaultWarmup??'';
   document.getElementById('prog-cooldown').value=cfg[idx].cooldown??currentUser._defaultCooldown??'';
   progPhotoData=cfg[idx].photo||null;
-  progPhoto2Data=cfg[idx].photo2||null;
+  // photo2 est stripée de Firebase — charger depuis localStorage si absente
+  progPhoto2Data=cfg[idx].photo2||localStorage.getItem('rc_p2_'+(currentUser?.email||'')+'_'+idx)||null;
   _pdfVideoLinks=null;
   const img=document.getElementById('prog-photo-preview');
   if(progPhotoData){img.src=progPhotoData;img.style.display='block';document.getElementById('prog-photo-ph').style.display='none';}
@@ -8184,6 +8187,11 @@ function loadProgPhoto2(input){
   const f=input.files[0];if(!f) return;
   compressImage(f,1600,0.92,data=>{
     progPhoto2Data=data;
+    // Persist in localStorage — Firebase strips photo2 on every push
+    const idx=window._editingSessionIdx;
+    if(currentUser?.email&&typeof idx==='number'){
+      try{localStorage.setItem('rc_p2_'+currentUser.email+'_'+idx,data);}catch(e){}
+    }
     document.getElementById('prog-photo2-ph').style.display='none';
     document.getElementById('prog-photo2-ready').style.display='block';
   });
@@ -8191,6 +8199,11 @@ function loadProgPhoto2(input){
 function clearProgPhoto2(){
   progPhoto2Data=null;
   _pdfVideoLinks=null;
+  // Remove from localStorage too
+  const idx2=window._editingSessionIdx;
+  if(currentUser?.email&&typeof idx2==='number'){
+    try{localStorage.removeItem('rc_p2_'+currentUser.email+'_'+idx2);}catch(e){}
+  }
   document.getElementById('prog-photo2-ph').style.display='flex';
   document.getElementById('prog-photo2-ready').style.display='none';
   const pz=document.getElementById('prog-paste-zone');
@@ -8320,7 +8333,7 @@ async function analyzeProgPhotos(){
           <div id="modal-overlay" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
           <div style="background:#161616;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <b style="color:#f87171">OCR — texte brut (v229)</b>
+              <b style="color:#f87171">OCR — texte brut (v230)</b>
               <button onclick="document.getElementById('modal-overlay').remove()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer">✕</button>
             </div>
             <p style="font-size:11px;color:var(--sub);margin-bottom:8px">Envoie-moi ce texte :</p>
@@ -8509,9 +8522,11 @@ function parseWorkoutSheet(text){
       // Repos — mot "repos" suivi d'un temps
       const rm=line.match(reposRe);
       if(rm){repos=rm[1].trim();continue;}
-      // Repos — ligne contenant UNIQUEMENT un temps (ex: "01 min", "90 sec", "2 min")
-      const rtm=line.match(/^\s*0?(\d{1,2})\s*(min(?:utes?)?|sec(?:ondes?)?)\s*$/i);
-      if(rtm){const u=rtm[2].slice(0,3).toLowerCase();repos=rtm[1]+' '+u;continue;}
+      // Repos — ligne = uniquement un temps ("01 min", "1 min 30", "2 min", "90 sec")
+      const rtmMin=line.match(/^\s*0?(\d{1,2})\s*min(?:utes?)?\s*(?:0?(\d{1,2})\s*(?:sec(?:ondes?)?)?)?\s*$/i);
+      if(rtmMin){repos=rtmMin[1]+' min'+(rtmMin[2]?' '+rtmMin[2]:'');continue;}
+      const rtmSec=line.match(/^\s*(\d{1,3})\s*sec(?:ondes?)?\s*$/i);
+      if(rtmSec){repos=rtmSec[1]+' sec';continue;}
 
       // Détection PUIS (dégressive)
       const pm=line.match(puisRe);
@@ -8618,7 +8633,7 @@ function showOcrReviewModal(exercises,idx,videoLinks=[]){
       <h2> ${exercises.length} exercices lus</h2>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer"></button>
     </div>
-    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v229</span></p>
+    <p class="sub" style="font-size:12px;margin-bottom:16px;line-height:1.6">Vérifie et corrige si besoin, puis importe. <span style="color:#4ade80;font-size:10px">v230</span></p>
     <div id="ocr-rows">${rows}</div>
     <button class="btn btn-red" style="margin-top:4px" onclick="importOcrExercises(${idx},${exercises.length})"> Importer dans la séance</button>
     <button class="btn btn-outline" style="margin-top:10px" onclick="closeModal()">Annuler</button>

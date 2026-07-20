@@ -2681,6 +2681,7 @@ function loadAccessGate(){
 function go(id){
   const _safe=['s-splash','s-welcome','s-coach-home','s-client-home','s-coach-entry','s-athlete-entry'];
   if(window._swUpdatePending&&_safe.includes(id)){location.reload();return;}
+  closeModal();
   document.querySelectorAll('.screen').forEach(s=>{
     s.classList.remove('active');
     s.style.display='none';
@@ -5182,6 +5183,12 @@ function finishWorkoutEarly(){
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&woState?.exercises?.length) woPersist();
+  if(document.hidden&&typeof _audioMediaRecorder!=='undefined'&&_audioMediaRecorder&&_audioMediaRecorder.state==='recording') cancelAudioAnnotation();
+});
+window.addEventListener('beforeunload',()=>{
+  if(typeof _audioMediaRecorder!=='undefined'&&_audioMediaRecorder&&_audioMediaRecorder.state==='recording'){
+    try{_audioMediaRecorder.stop();}catch(e){}
+  }
 });
 
 function launchWorkout(sessConfig){
@@ -9556,7 +9563,10 @@ function openAddAthlete(){
   </div></div>`;
   document.body.insertAdjacentHTML('beforeend',html);
 }
-function closeModal(){document.getElementById('modal-overlay')?.remove();}
+function closeModal(){
+  if(typeof _audioMediaRecorder!=='undefined'&&_audioMediaRecorder&&_audioMediaRecorder.state==='recording') cancelAudioAnnotation();
+  document.getElementById('modal-overlay')?.remove();
+}
 async function createAthlete(){
   const fn=document.getElementById('aa-fname').value.trim();
   const ln=document.getElementById('aa-lname').value.trim();

@@ -2683,6 +2683,17 @@ function loadAccessGate(){
 function go(id){
   const _safe=['s-splash','s-welcome','s-coach-home','s-client-home','s-coach-entry','s-athlete-entry'];
   if(window._swUpdatePending&&_safe.includes(id)){location.reload();return;}
+  // Filet de sécurité UI — le vrai contrôle d'accès reste côté données/serveur (P02).
+  if(id.startsWith('s-coach-')&&!['s-coach-home','s-coach-entry'].includes(id)&&currentUser?.role!=='coach'){
+    toast('Accès réservé au coach','var(--orange)');
+    go(currentUser?'s-client-home':'s-welcome');
+    return;
+  }
+  if((id.startsWith('s-client-')||id.startsWith('s-athlete-'))&&!['s-client-home','s-athlete-entry'].includes(id)&&currentUser?.role==='coach'){
+    toast('Écran réservé aux athlètes','var(--orange)');
+    go('s-coach-home');
+    return;
+  }
   closeModal();
   document.querySelectorAll('.screen').forEach(s=>{
     s.classList.remove('active');

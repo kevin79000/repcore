@@ -7967,7 +7967,7 @@ function _renderCaffeineScreen(){
       <div class="caff-entry-row">
         <span style="font-size:24px">${e.icon||'☕'}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:13px">${e.name}</div>
+          <div style="font-weight:700;font-size:13px">${escapeHtml(e.name)}</div>
           <div style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:4px">
             <input type="time" value="${e.time||''}" onchange="updateCaffeineEntryTime('${date}',${i},this.value)" style="background:none;border:none;border-bottom:1px solid #333;color:var(--sub);font-size:11px;font-family:Montserrat,sans-serif;cursor:pointer;padding:0;width:52px">
             ${e.volume?'· '+escapeHtml(e.volume):''}
@@ -8030,7 +8030,7 @@ function _renderCaffeineEmbedded(){
     :entries.map((e,i)=>`<div class="caff-entry-row">
         <span style="font-size:24px">${e.icon||'☕'}</span>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:13px">${e.name}</div>
+          <div style="font-weight:700;font-size:13px">${escapeHtml(e.name)}</div>
           <div style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:4px">
             <input type="time" value="${e.time||''}" onchange="updateCaffeineEntryTime('${date}',${i},this.value)" style="background:none;border:none;border-bottom:1px solid #333;color:var(--sub);font-size:11px;font-family:Montserrat,sans-serif;cursor:pointer;padding:0;width:52px">
             ${e.volume?'· '+escapeHtml(e.volume):''}
@@ -9051,7 +9051,7 @@ function openPhotoFull(src,title){
   const m=document.createElement('div');
   m.style.cssText='position:fixed;inset:0;background:#000e;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer';
   m.onclick=()=>m.remove();
-  m.innerHTML=`<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px">${title}</div>
+  m.innerHTML=`<div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px">${escapeHtml(title)}</div>
     <img src="${src}" style="max-width:94vw;max-height:80vh;object-fit:contain;border-radius:8px">
     <div style="font-size:11px;color:#444;margin-top:12px">Touche pour fermer</div>`;
   document.body.appendChild(m);

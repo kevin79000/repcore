@@ -3429,27 +3429,24 @@ function toggleSCard(hdr){
   arr.textContent=opening?'▼':'▶';
 }
 // ======= FIN RÉCAP SÉANCES COACH =======
-function openClientDetail(cid,_refresh){
-  currentClientId=cid;
-  const users=DB.get('users')||{};
-
-  // Chercher d'abord dans les users enregistrés
-  let c=Object.values(users).find(u=>u.id===cid);
-
-  // Si pas trouvé → profil depuis code (autre appareil)
-  if(!c&&cid.startsWith('_code_')){
+// Retourne l'élève seulement s'il appartient au coach courant ; toast + null sinon.
+// Passe `users` (déjà chargé) pour éviter un double DB.get dans les fonctions d'écriture.
+function getOwnedClient(cid,users){
+  if(!currentUser) return null;
+  if(cid?.startsWith('_code_')){
     const codeId=cid.replace('_code_','');
     const code=(currentUser.studentCodes||[]).find(x=>x.codeId===codeId);
-    if(!code) return;
-    c={
-      id:cid,
-      fname:code.studentName.split(' ')[0],
-      lname:code.studentName.split(' ').slice(1).join(' '),
-      role:'athlete',status:'COACHING_SUIVI',
-      sessions:[],bilans:[],streak:0,
-      _fromCode:true,_codeInfo:code
-    };
+    if(!code){toast('Élève introuvable ou non autorisé','var(--orange)');return null;}
+    return {id:cid,fname:code.studentName.split(' ')[0],lname:code.studentName.split(' ').slice(1).join(' '),role:'athlete',status:'COACHING_SUIVI',sessions:[],bilans:[],streak:0,_fromCode:true,_codeInfo:code};
   }
+  const all=users||(DB.get('users')||{});
+  const c=Object.values(all).find(u=>u.id===cid);
+  if(!c||c.coachId!==currentUser.id){toast('Élève introuvable ou non autorisé','var(--orange)');return null;}
+  return c;
+}
+function openClientDetail(cid,_refresh){
+  currentClientId=cid;
+  const c=getOwnedClient(cid);
   if(!c) return;
 
   document.getElementById('ccd-title').textContent=c.fname;
@@ -3535,7 +3532,7 @@ function openClientDetail(cid,_refresh){
 }
 function confirmDeleteClient(){
   if(!confirm('Retirer cet élève de ton suivi ?\nSon compte reste actif mais il ne sera plus associé à ton coaching.')) return;
-  const users=DB.get('users')||{};
+  if(!getOwnedClient(currentClientId)) return;
   if(currentClientId.startsWith('_code_')){
     // Élève code uniquement → supprimer le code
     const codeId=currentClientId.replace('_code_','');
@@ -3543,6 +3540,7 @@ function confirmDeleteClient(){
     saveUser();
   } else {
     // Élève enregistré → détacher du coach
+    const users=DB.get('users')||{};
     const athlete=Object.values(users).find(u=>u.id===currentClientId);
     if(athlete){
       athlete.coachId=null;athlete.coachName=null;athlete.coachCode=null;
@@ -3552,16 +3550,16 @@ function confirmDeleteClient(){
     }
     // Nettoyer les refs côté coach
     if(currentUser.clients) currentUser.clients=currentUser.clients.filter(id=>id!==currentClientId);
-    if(currentUser.seenBilans) delete currentUser.seenBilans[Object.values(users).find(u=>u.id===currentClientId)?.email];
+    if(currentUser.seenBilans) delete currentUser.seenBilans[athlete?.email];
     saveUser();
   }
   toast('Élève retiré du suivi');
   go('s-coach-home');loadCoachHome();
 }
 function viewClientBilans(){
-  const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
-  if(!c||!c.bilans?.length){toast('Aucun bilan disponible','var(--orange)');return;}
+  const c=getOwnedClient(currentClientId);
+  if(!c) return;
+  if(!c.bilans?.length){toast('Aucun bilan disponible','var(--orange)');return;}
   document.getElementById('evo-title').textContent=c.fname+' — Évolution';
   renderBilanEvolution(c);
   go('s-coach-bilan-evo');
@@ -3573,7 +3571,7 @@ function addBilanPhoto(bilanDate,bilanType,view,inputEl){
   const reader=new FileReader();
   reader.onload=e=>{
     const users=DB.get('users')||{};
-    const cl=Object.values(users).find(u=>u.id===currentClientId);
+    const cl=getOwnedClient(currentClientId,users);
     if(!cl)return;
     const bil=cl.bilans?.find(b=>b.date===bilanDate&&b.type===bilanType);
     if(!bil)return;
@@ -4212,12 +4210,9 @@ function confirmAssignProgram(){
 // ======= COACH SESSION MANAGER =======
 let _coachEditClient=null;
 function openCoachSessions(){
-  const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
-  if(!c){
-    if(currentClientId?.startsWith('_code_')) toast('Cet athlète n\'a pas encore créé son compte.','var(--orange)');
-    return;
-  }
+  const c=getOwnedClient(currentClientId);
+  if(!c) return;
+  if(c._fromCode){toast('Cet athlète n\'a pas encore créé son compte.','var(--orange)');return;}
   _coachEditClient=JSON.parse(JSON.stringify(c));
   const sc=_coachEditClient.sessions_config;
   const g=_coachEditClient._evol_gender;
@@ -4315,6 +4310,7 @@ function saveCoachSessions(){
   const c=_coachEditClient;
   if(!c) return;
   const users=DB.get('users')||{};
+  if(!getOwnedClient(currentClientId,users)) return;
   const emailKey=Object.keys(users).find(k=>users[k]?.id===currentClientId);
   if(!emailKey){toast('Athlète introuvable','var(--orange)');return;}
   _pushSessionsHistory(users[emailKey]); // snapshot avant écrasement
@@ -4327,10 +4323,10 @@ function saveCoachSessions(){
 }
 
 function openCoachProgram(){
-  const users=DB.get('users')||{};
-  let c=Object.values(users).find(u=>u.id===currentClientId);
-  if(!c&&currentClientId?.startsWith('_code_')){toast('Cet athlète n\'a pas encore créé son compte. Le programme sera disponible après son inscription.','var(--orange)');return;}
-  progEx=c?.program?JSON.parse(JSON.stringify(c.program)):[...defEx.map(e=>({...e}))];
+  const c=getOwnedClient(currentClientId);
+  if(!c) return;
+  if(c._fromCode){toast('Cet athlète n\'a pas encore créé son compte. Le programme sera disponible après son inscription.','var(--orange)');return;}
+  progEx=c.program?JSON.parse(JSON.stringify(c.program)):[...defEx.map(e=>({...e}))];
   document.getElementById('prog-name').value=c?.programName||'SÉANCE 1 : DOS & ABDOS';
   document.getElementById('prog-notes').value=c?.programNotes||'';
   document.getElementById('prog-warmup').value=c?.programWarmup??currentUser._defaultWarmup??'';
@@ -4379,7 +4375,7 @@ async function uploadCoachPdf(input){
   const f=input.files[0];if(!f) return;
   if(f.size>20*1024*1024){toast('PDF trop lourd (max 20 Mo). Compresse ou utilise un lien Drive.','var(--orange)');return;}
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   const emailKey=c.email.toLowerCase().replace(/\./g,',');
   toast('Téléversement en cours…');
@@ -4408,7 +4404,7 @@ function saveCoachPdfLink(){
   const driveMatch=link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if(driveMatch) url=`https://drive.google.com/file/d/${driveMatch[1]}/preview`;
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   c.programPdfLink=url;
   c.programPdf=null;
@@ -4424,7 +4420,7 @@ function saveCoachPdfLink(){
 function removeCoachPdf(){
   if(!confirm('Supprimer le PDF du programme ?')) return;
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   c.programPdf=null;c.programPdfLink=null;c.programPdfName=null;c.programPdfDate=null;c.programPdfSize=null;
   c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
@@ -4468,7 +4464,7 @@ async function uploadCoachPdfInline(input){
   const f=input.files[0];if(!f) return;
   if(f.size>20*1024*1024){toast('PDF trop lourd (max 20 Mo). Compresse ou utilise un lien Drive.','var(--orange)');return;}
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   const emailKey=c.email.toLowerCase().replace(/\./g,',');
   toast('Téléversement en cours…');
@@ -4495,7 +4491,7 @@ function saveCoachPdfLinkInline(){
   const driveMatch=link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
   if(driveMatch) url=`https://drive.google.com/file/d/${driveMatch[1]}/preview`;
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   c.programPdfLink=url;
   c.programPdf=null;
@@ -4653,7 +4649,7 @@ function saveProgram(){
   // Sinon: coach édite le programme d'un athlète
   if(!currentClientId) return;
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);if(!c) return;
+  const c=getOwnedClient(currentClientId,users);if(!c) return;
   c.program=progEx;
   c.programName=document.getElementById('prog-name').value;
   c.programNotes=document.getElementById('prog-notes').value;
@@ -7321,7 +7317,7 @@ function renderCoachNutriSection(c){
 
 function saveClientNutriDiet(type){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   if(!c.nutrition) c.nutrition={};
   c.nutrition.dietType=type;
@@ -7332,7 +7328,7 @@ function saveClientNutriDiet(type){
 
 function saveClientNutriMacros(){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   if(!c.nutrition) c.nutrition={};
   const g=id=>{const v=parseFloat(document.getElementById(id)?.value);return isNaN(v)?undefined:v;};
@@ -7349,7 +7345,7 @@ function addClientStrictPhoto(input){
   if(!file) return;
   compressImage(file,1400,0.85,b64=>{
     const users=DB.get('users')||{};
-    const c=Object.values(users).find(u=>u.id===currentClientId);
+    const c=getOwnedClient(currentClientId,users);
     if(!c) return;
     if(!c.nutrition) c.nutrition={};
     if(!Array.isArray(c.nutrition.strictPhotos)) c.nutrition.strictPhotos=[];
@@ -7362,7 +7358,7 @@ function addClientStrictPhoto(input){
 
 function deleteClientStrictPhoto(index){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c||!c.nutrition?.strictPhotos) return;
   c.nutrition.strictPhotos.splice(index,1);
   c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
@@ -7633,7 +7629,7 @@ function renderCoachSuppSection(c){
 
 function saveClientSuppEntry(){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   const name=(document.getElementById('ccd-supp-name').value||'').trim();
   const qty=parseFloat(document.getElementById('ccd-supp-qty').value);
@@ -7656,7 +7652,7 @@ function saveClientSuppEntry(){
 
 function deleteClientSuppEntry(index){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c||!Array.isArray(c.nutrition?.supplements)) return;
   c.nutrition.supplements.splice(index,1);
   c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
@@ -7666,7 +7662,7 @@ function deleteClientSuppEntry(index){
 function openCoachSuppEdit(idx){
   document.getElementById('modal-overlay')?.remove();
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   const list=c.nutrition?.supplements||[];
   const s=idx>=0?list[idx]:null;
@@ -7724,7 +7720,7 @@ function openCoachSuppEdit(idx){
 
 function saveCoachSuppEdit(){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c) return;
   const name=(document.getElementById('coach-supp-name').value||'').trim();
   const qty=parseFloat(document.getElementById('coach-supp-qty').value);
@@ -7755,7 +7751,7 @@ function saveCoachSuppEdit(){
 
 function deleteCoachSuppEdit(idx){
   const users=DB.get('users')||{};
-  const c=Object.values(users).find(u=>u.id===currentClientId);
+  const c=getOwnedClient(currentClientId,users);
   if(!c||!Array.isArray(c.nutrition?.supplements)) return;
   c.nutrition.supplements.splice(idx,1);
   c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
@@ -8475,7 +8471,8 @@ function removeTsAnnotation(sortedIdx){
 }
 function openVideoCorrection(email,videoId){
   const users=DB.get('users')||{};
-  const c=users[email];if(!c)return;
+  const c=users[email];
+  if(!c||c.coachId!==currentUser?.id){toast('Élève introuvable ou non autorisé','var(--orange)');return;}
   const v=(c.videos||[]).find(x=>x.id===videoId);if(!v)return;
   window._vcEmail=email;window._vcVideoId=videoId;
   window._tsAnnotations=v.feedbackTimestamps?JSON.parse(JSON.stringify(v.feedbackTimestamps)):[];
@@ -8533,7 +8530,8 @@ function saveVideoCorrection(){
   const tss=window._tsAnnotations||[];
   if(!general&&!tss.length) return toast('Ajoute un commentaire ou au moins un repère','var(--orange)');
   const users=DB.get('users')||{};
-  const c=users[window._vcEmail];if(!c)return;
+  const c=users[window._vcEmail];
+  if(!c||c.coachId!==currentUser?.id){toast('Élève introuvable ou non autorisé','var(--orange)');return;}
   const idx=(c.videos||[]).findIndex(v=>v.id===window._vcVideoId);if(idx<0)return;
   c.videos[idx].feedback=general;
   c.videos[idx].feedbackTimestamps=tss;
@@ -10322,7 +10320,7 @@ function loadMonetisationTab(){
 function toggleSubStatus(email){
   const users=DB.get('users')||{};
   const u=users[email];
-  if(!u) return;
+  if(!u||u.coachId!==currentUser?.id){toast('Élève introuvable ou non autorisé','var(--orange)');return;}
   if(u.paymentStatus==='active'&&!confirm('Suspendre l\'abonnement de '+u.fname+' ? Il perdra l\'accès immédiatement.')) return;
   u.paymentStatus=u.paymentStatus==='active'?'cancelled':'active';
   users[email]=u;

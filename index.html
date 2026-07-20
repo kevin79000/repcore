@@ -4526,10 +4526,10 @@ function renderProgEx(){
         </div>
         <!-- Séries / Reps / Repos -->
         <div style="display:grid;grid-template-columns:1fr 2fr 1fr;gap:8px;margin-bottom:10px">
-          <div><label>Séries</label><input type="number" value="${ex.series||3}" onchange="progEx[${i}].series=+this.value" style="text-align:center"></div>
+          <div><label>Séries</label><input type="number" min="0" value="${ex.series||3}" onchange="this.value=Math.max(0,+this.value);progEx[${i}].series=+this.value" style="text-align:center"></div>
           <div>
             <label>Reps <span style="font-size:9px;color:var(--sub);text-transform:none">(ex: 10 PUIS 20 / 6-8 / 15 Par Jambe)</span></label>
-            <input value="${escapeHtml(ex.reps||'')}" onchange="progEx[${i}].reps=this.value" placeholder="10 PUIS 20" style="text-align:center">
+            <input value="${escapeHtml(ex.reps||'')}" onchange="if(/^-\\d+$/.test(this.value.trim())){toast('Reps invalides — valeur négative non autorisée','var(--orange)');this.value=progEx[${i}].reps||'';return;}progEx[${i}].reps=this.value" placeholder="10 PUIS 20" style="text-align:center">
             <div style="margin-top:4px">${badge}</div>
           </div>
           <div><label>Repos</label><input value="${escapeHtml(ex.repos||'01 min')}" onchange="progEx[${i}].repos=this.value" placeholder="01 min" style="text-align:center;font-size:12px"></div>

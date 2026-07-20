@@ -1879,7 +1879,7 @@ const COACH_PHOTO='icons/coach.jpg';
 
 <!-- CAFÉINE JOURNAL -->
 <div id="s-caffeine" class="screen">
-  <div class="topbar"><button class="back-btn" onclick="go('s-client-home')">←</button><span class="topbar-title">☕ Caféine</span><span></span></div>
+  <div class="topbar"><button class="back-btn" onclick="loadNutrition()">←</button><span class="topbar-title">☕ Caféine</span><span></span></div>
   <div class="scroll-area" style="flex:1">
     <div class="pad">
       <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:16px;margin-bottom:16px">
@@ -7354,6 +7354,9 @@ function _renderSuppTable(list, isCoach, editFn){
     }).join('')}`;
 }
 
+let _suppReturnToNutrition=false;
+let _caffReturnToNutrition=false;
+
 function loadSupplements(){
   go('s-supplements');
   const list=_suppStore();
@@ -7390,6 +7393,7 @@ function loadSuppEmbedded(){
 }
 
 function openSuppEdit(idx){
+  _suppReturnToNutrition=document.getElementById('s-nutrition')?.classList.contains('active')||false;
   go('s-supplement-edit');
   const list=_suppStore();
   const s=idx>=0?list[idx]:null;
@@ -7449,7 +7453,7 @@ function saveSuppEntry(){
   saveUser();
   if(currentUser._notifEnabled) scheduleSuppNotif();
   toast(idx>=0?'Complément mis à jour ✓':'Complément ajouté ✓');
-  loadSupplements();
+  _suppReturnToNutrition?loadNutrition():loadSupplements();
 }
 
 function deleteSuppEntry(idx){
@@ -7459,7 +7463,7 @@ function deleteSuppEntry(idx){
   saveUser();
   if(currentUser._notifEnabled) scheduleSuppNotif();
   toast('Complément supprimé');
-  loadSupplements();
+  _suppReturnToNutrition?loadNutrition():loadSupplements();
 }
 
 // ======= SUPPLEMENTS COACH =======
@@ -7645,7 +7649,7 @@ function deleteCaffeineEntry(dateStr,idx){
   days[dateStr].splice(idx,1);
   if(!days[dateStr].length) delete days[dateStr];
   saveUser();
-  loadCaffeine();
+  _caffReturnToNutrition?loadNutrition():loadCaffeine();
 }
 function loadCaffeine(){
   go('s-caffeine');
@@ -7798,6 +7802,7 @@ function _drawCaffeineHistory(wKg,canvasId='caff-history-chart'){
   });
 }
 function openCaffeineAdd(){
+  _caffReturnToNutrition=document.getElementById('s-nutrition')?.classList.contains('active')||false;
   go('s-caffeine-add');
   document.querySelectorAll('.caff-type-btn').forEach(b=>b.classList.remove('active'));
   const first=document.querySelector('.caff-type-btn');
@@ -7851,7 +7856,7 @@ function confirmCaffeineAdd(pRaw){
   const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   addCaffeineEntry({id:p.id,name:p.name,icon:p.icon,mg:p.mg,volume:p.volume||'',type:p.type,time:hhmm,ts:Date.now()});
   toast(p.name+' ajouté ✓');
-  loadCaffeine();
+  _caffReturnToNutrition?loadNutrition():loadCaffeine();
 }
 function saveCaffeineCustom(){
   const name=(document.getElementById('caff-custom-name')||{}).value?.trim();
@@ -7862,7 +7867,7 @@ function saveCaffeineCustom(){
   const hhmm=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   addCaffeineEntry({id:'custom',name,icon:'☕',mg,volume,type:'custom',time:hhmm,ts:Date.now()});
   toast(name+' ajouté ✓');
-  loadCaffeine();
+  _caffReturnToNutrition?loadNutrition():loadCaffeine();
 }
 
 // ======= VIDEOS =======

@@ -1884,6 +1884,7 @@ const COACH_PHOTO='icons/coach.jpg';
   <div class="topbar"><button class="back-btn" onclick="loadNutrition()">←</button><span class="topbar-title">☕ Caféine</span><span></span></div>
   <div class="scroll-area" style="flex:1">
     <div class="pad">
+      <div id="caff-date-nav" style="margin-bottom:12px"></div>
       <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:16px;margin-bottom:16px">
         <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
           <span id="caff-total-mg" style="font-size:36px;font-family:'Bebas Neue',cursive;color:var(--red)">0mg</span>
@@ -1895,10 +1896,10 @@ const COACH_PHOTO='icons/coach.jpg';
         <div id="caff-thresholds" style="font-size:10px;color:var(--sub)"></div>
       </div>
       <div id="caff-alerts"></div>
-      <button class="btn btn-red" onclick="openCaffeineAdd()" style="margin-bottom:20px">+ Enregistrer une prise</button>
+      <button id="caff-add-btn" class="btn btn-red" onclick="openCaffeineAdd()" style="margin-bottom:20px">+ Enregistrer une prise</button>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div style="width:20px;height:2px;background:var(--red)"></div>
-        <h3>Aujourd'hui</h3>
+        <h3 id="caff-day-label">Aujourd'hui</h3>
       </div>
       <div id="caff-list"></div>
       <div class="divider"></div>
@@ -7149,6 +7150,16 @@ function deleteFoodEntry(date,id){
 function _renderFjDaySummary(date){
   const el=document.getElementById('fj-today-section');
   if(!el) return;
+  const todayStr=localISODate(new Date());
+  const isToday=date===todayStr;
+  const [_yy,_mm,_dd]=date.split('-').map(Number);
+  const prevStr=localISODate(new Date(_yy,_mm-1,_dd-1));
+  const nextStr=localISODate(new Date(_yy,_mm-1,_dd+1));
+  const yst=new Date();yst.setDate(yst.getDate()-1);
+  const dateLbl=isToday?"Aujourd'hui":date===localISODate(yst)?"Hier":new Date(_yy,_mm-1,_dd).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  const nextBtn=isToday
+    ?`<button disabled style="background:none;border:1px solid #222;color:#333;border-radius:8px;padding:4px 10px;font-size:14px;cursor:not-allowed">→</button>`
+    :`<button onclick="_renderFjDaySummary('${nextStr}')" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px">→</button>`;
   const nut=currentUser.nutrition||{};
   const entries=(nut.log?.[date]?.entries)||[];
   const isOn=nutIsOnDay(date);
@@ -7171,7 +7182,14 @@ function _renderFjDaySummary(date){
 
   el.innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px"><h3 style="margin:0;font-size:15px">Journal du jour</h3>${dayBadge}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <button onclick="_renderFjDaySummary('${prevStr}')" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:14px">←</button>
+        <div>
+          <h3 style="margin:0;font-size:14px">${dateLbl}</h3>
+          <div style="margin-top:3px">${dayBadge}</div>
+        </div>
+        ${nextBtn}
+      </div>
       <button onclick="openFoodSearch('${date}')" style="background:var(--red);border:none;color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;padding:8px 14px;border-radius:8px;cursor:pointer">+ AJOUTER</button>
     </div>
     <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:12px;padding:14px;margin-bottom:6px">
@@ -7405,6 +7423,8 @@ function _renderSuppTable(list, isCoach, editFn){
 
 let _suppReturnToNutrition=false;
 let _caffReturnToNutrition=false;
+let _caffeineViewDate=null;  // date affichée dans l'écran standalone s-caffeine
+let _caffeineEmbedDate=null; // date affichée dans la section embarquée s-nutrition
 
 function loadSupplements(){
   go('s-supplements');
@@ -7857,12 +7877,35 @@ function deleteCaffeineEntry(dateStr,idx){
   days[dateStr].splice(idx,1);
   if(!days[dateStr].length) delete days[dateStr];
   saveUser();
-  _caffReturnToNutrition?loadNutrition():loadCaffeine();
+  _caffReturnToNutrition?loadNutrition():_renderCaffeineScreen();
 }
 function loadCaffeine(){
+  _caffeineViewDate=localISODate(new Date());
   go('s-caffeine');
-  const today=localISODate(new Date());
-  const entries=getCaffeineDay(today);
+  _renderCaffeineScreen();
+}
+function _renderCaffeineScreen(){
+  const date=_caffeineViewDate||localISODate(new Date());
+  const todayStr=localISODate(new Date());
+  const isToday=date===todayStr;
+  const [yy,mm,dd]=date.split('-').map(Number);
+  const prevStr=localISODate(new Date(yy,mm-1,dd-1));
+  const nextStr=localISODate(new Date(yy,mm-1,dd+1));
+  const yst=new Date();yst.setDate(yst.getDate()-1);
+  const dateLbl=isToday?"Aujourd'hui":date===localISODate(yst)?"Hier":new Date(yy,mm-1,dd).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  const navEl=document.getElementById('caff-date-nav');
+  if(navEl) navEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;gap:12px">
+    <button onclick="_caffeineViewDate='${prevStr}';_renderCaffeineScreen()" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:15px;font-family:Montserrat,sans-serif">←</button>
+    <span style="font-size:13px;font-weight:700;min-width:110px;text-align:center">${dateLbl}</span>
+    ${isToday
+      ?`<button disabled style="background:none;border:1px solid #222;color:#333;border-radius:8px;padding:6px 13px;font-size:15px;cursor:not-allowed">→</button>`
+      :`<button onclick="_caffeineViewDate='${nextStr}';_renderCaffeineScreen()" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:6px 13px;cursor:pointer;font-size:15px;font-family:Montserrat,sans-serif">→</button>`}
+  </div>`;
+  const dayLabelEl=document.getElementById('caff-day-label');
+  if(dayLabelEl) dayLabelEl.textContent=dateLbl;
+  const addBtn=document.getElementById('caff-add-btn');
+  if(addBtn) addBtn.style.display=isToday?'':'none';
+  const entries=getCaffeineDay(date);
   const totalMg=entries.reduce((s,e)=>s+(e.mg||0),0);
   const {weight:wKg,estimated:_wEst}=getUserWeight();
   const thr=caffeineThresholds(wKg);
@@ -7887,20 +7930,29 @@ function loadCaffeine(){
     alertEl.innerHTML='';
   const listEl=document.getElementById('caff-list');
   if(!entries.length){
-    listEl.innerHTML='<p style="color:var(--sub);font-size:13px;padding:12px 0">Aucune prise enregistrée aujourd\'hui.</p>';
+    listEl.innerHTML='<p style="color:var(--sub);font-size:13px;padding:12px 0">Aucune prise enregistrée ce jour.</p>';
   } else {
     listEl.innerHTML=entries.map((e,i)=>`
       <div class="caff-entry-row">
         <span style="font-size:24px">${e.icon||'☕'}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px">${e.name}</div>
-          <div style="font-size:11px;color:var(--sub)">${e.time||''}${e.volume?' · '+e.volume:''}</div>
+          <div style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:4px">
+            <input type="time" value="${e.time||''}" onchange="updateCaffeineEntryTime('${date}',${i},this.value)" style="background:none;border:none;border-bottom:1px solid #333;color:var(--sub);font-size:11px;font-family:Montserrat,sans-serif;cursor:pointer;padding:0;width:52px">
+            ${e.volume?'· '+escapeHtml(e.volume):''}
+          </div>
         </div>
         <span style="font-weight:900;color:var(--red);font-size:15px;min-width:48px;text-align:right">${e.mg}mg</span>
-        <button onclick="deleteCaffeineEntry('${today}',${i})" style="background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:4px 8px;-webkit-tap-highlight-color:transparent">×</button>
+        <button onclick="deleteCaffeineEntry('${date}',${i})" style="background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:4px 8px;-webkit-tap-highlight-color:transparent">×</button>
       </div>`).join('');
   }
   requestAnimationFrame(()=>_drawCaffeineHistory(wKg));
+}
+function updateCaffeineEntryTime(dateStr,idx,val){
+  const days=_caffStore();
+  if(!days[dateStr]||!days[dateStr][idx]) return;
+  days[dateStr][idx].time=val;
+  saveUser();
 }
 function deleteCaffeineEntryEmbedded(dateStr,idx){
   const days=_caffStore();
@@ -7908,13 +7960,28 @@ function deleteCaffeineEntryEmbedded(dateStr,idx){
   days[dateStr].splice(idx,1);
   if(!days[dateStr].length) delete days[dateStr];
   saveUser();
-  loadNutrition();
+  _renderCaffeineEmbedded();
 }
 function loadCaffeineEmbedded(){
+  _caffeineEmbedDate=localISODate(new Date());
+  _renderCaffeineEmbedded();
+}
+function _renderCaffeineEmbedded(){
   const el=document.getElementById('caff-embedded');
   if(!el) return;
-  const today=localISODate(new Date());
-  const entries=getCaffeineDay(today);
+  const date=_caffeineEmbedDate||localISODate(new Date());
+  const todayStr=localISODate(new Date());
+  const isToday=date===todayStr;
+  const [yy,mm,dd]=date.split('-').map(Number);
+  const prevStr=localISODate(new Date(yy,mm-1,dd-1));
+  const nextStr=localISODate(new Date(yy,mm-1,dd+1));
+  const yst=new Date();yst.setDate(yst.getDate()-1);
+  const dateLbl=isToday?"Aujourd'hui":date===localISODate(yst)?"Hier":new Date(yy,mm-1,dd).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  const navPrev=`<button onclick="_caffeineEmbedDate='${prevStr}';_renderCaffeineEmbedded()" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:15px;font-family:Montserrat,sans-serif">←</button>`;
+  const navNext=isToday
+    ?`<button disabled style="background:none;border:1px solid #222;color:#333;border-radius:8px;padding:5px 12px;font-size:15px;cursor:not-allowed">→</button>`
+    :`<button onclick="_caffeineEmbedDate='${nextStr}';_renderCaffeineEmbedded()" style="background:none;border:1px solid #333;color:#aaa;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:15px;font-family:Montserrat,sans-serif">→</button>`;
+  const entries=getCaffeineDay(date);
   const totalMg=entries.reduce((s,e)=>s+(e.mg||0),0);
   const {weight:wKg,estimated:_wEst}=getUserWeight();
   const thr=caffeineThresholds(wKg);
@@ -7928,20 +7995,28 @@ function loadCaffeineEmbedded(){
   else if(totalMg>=thr.yellow)
     alertHtml='<div class="caff-alert-banner" style="background:#1a1400;border-color:#eab308;color:#eab308">⚡ Attention — proche de ta limite recommandée ('+thr.yellow+'mg).</div>';
   const listHtml=!entries.length
-    ?'<p style="color:var(--sub);font-size:13px;padding:12px 0">Aucune prise enregistrée aujourd\'hui.</p>'
+    ?'<p style="color:var(--sub);font-size:13px;padding:12px 0">Aucune prise enregistrée ce jour.</p>'
     :entries.map((e,i)=>`<div class="caff-entry-row">
         <span style="font-size:24px">${e.icon||'☕'}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px">${e.name}</div>
-          <div style="font-size:11px;color:var(--sub)">${e.time||''}${e.volume?' · '+e.volume:''}</div>
+          <div style="font-size:11px;color:var(--sub);display:flex;align-items:center;gap:4px">
+            <input type="time" value="${e.time||''}" onchange="updateCaffeineEntryTime('${date}',${i},this.value)" style="background:none;border:none;border-bottom:1px solid #333;color:var(--sub);font-size:11px;font-family:Montserrat,sans-serif;cursor:pointer;padding:0;width:52px">
+            ${e.volume?'· '+escapeHtml(e.volume):''}
+          </div>
         </div>
         <span style="font-weight:900;color:var(--red);font-size:15px;min-width:48px;text-align:right">${e.mg}mg</span>
-        <button onclick="deleteCaffeineEntryEmbedded('${today}',${i})" style="background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:4px 8px;-webkit-tap-highlight-color:transparent">×</button>
+        <button onclick="deleteCaffeineEntryEmbedded('${date}',${i})" style="background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:4px 8px;-webkit-tap-highlight-color:transparent">×</button>
       </div>`).join('');
   el.innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div style="width:3px;height:20px;background:var(--red);border-radius:2px"></div>
       <h3>☕ Caféine</h3>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px">
+      ${navPrev}
+      <span style="font-size:13px;font-weight:700;min-width:100px;text-align:center">${dateLbl}</span>
+      ${navNext}
     </div>
     <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:16px;margin-bottom:16px">
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
@@ -7954,10 +8029,10 @@ function loadCaffeineEmbedded(){
       <div style="font-size:10px;color:var(--sub)">Seuils : vert &lt;${thr.green}mg · jaune &lt;${thr.yellow}mg · orange &lt;${thr.orange}mg · rouge ${thr.red}mg${_wEst?'<span style="display:block;margin-top:4px;color:#f97316;font-size:9px">⚖️ Poids estimé (75 kg) — renseigne ton poids réel pour des seuils précis</span>':''}</div>
     </div>
     ${alertHtml}
-    <button class="btn btn-red" onclick="openCaffeineAdd()" style="margin-bottom:20px">+ Enregistrer une prise</button>
+    ${isToday?'<button class="btn btn-red" onclick="openCaffeineAdd()" style="margin-bottom:20px">+ Enregistrer une prise</button>':''}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <div style="width:20px;height:2px;background:var(--red)"></div>
-      <h3>Aujourd'hui</h3>
+      <h3>${dateLbl}</h3>
     </div>
     ${listHtml}
     <div class="divider"></div>

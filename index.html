@@ -6720,7 +6720,8 @@ function nutIsOnDay(dateStr){
   // Détermine si c'est un jour d'entraînement selon sessions_config
   const cfg=currentUser.sessions_config;
   if(!cfg) return false;
-  const d=new Date(dateStr);
+  const [_y,_m,_day]=dateStr.split('-').map(Number);
+  const d=new Date(_y,_m-1,_day);
   // getDay() : 0=dim, 1=lun... → sessions_config index 0=lun
   const idx=(d.getDay()+6)%7; // lundi=0
   return cfg[idx]?.active===true;

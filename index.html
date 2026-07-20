@@ -7303,7 +7303,7 @@ function renderCoachNutriSection(c){
         <div style="font-size:9px;color:var(--sub);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:10px">🎯 Objectifs nutritionnels</div>
         <div style="display:grid;grid-template-columns:90px 1fr 1fr;gap:6px;margin-bottom:8px">
           <div></div>
-          <div style="font-size:8px;font-weight:800;color:#22c55e;letter-spacing:1px;text-align:center;background:#021007;border:1px solid #052a10;border-radius:6px;padding:4px">⚡ JOUR ON</div>
+          <div style="font-size:8px;font-weight:800;color:var(--green);letter-spacing:1px;text-align:center;background:#021007;border:1px solid #052a10;border-radius:6px;padding:4px">⚡ JOUR ON</div>
           <div style="font-size:8px;font-weight:800;color:#60a5fa;letter-spacing:1px;text-align:center;background:#020a1a;border:1px solid #0a1a35;border-radius:6px;padding:4px">💤 JOUR OFF</div>
         </div>
         ${macroRows}
@@ -7315,7 +7315,7 @@ function renderCoachNutriSection(c){
           <div style="font-size:9px;color:var(--sub);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:10px">📋 Plan alimentaire</div>
           ${photos.map((src,i)=>`
             <div style="position:relative;margin-bottom:8px">
-              <img src="${src}" style="width:100%;border-radius:8px;display:block;border:1px solid #1a1a1a">
+              <img src="${src}" style="width:100%;border-radius:8px;display:block;border:1px solid var(--border)">
               <button onclick="deleteClientStrictPhoto(${i})" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.8);border:none;color:#fff;border-radius:50%;width:26px;height:26px;font-size:13px;cursor:pointer;line-height:1;padding:0">✕</button>
             </div>`).join('')}
           <label style="display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;background:#111;border:1.5px dashed #2a2a2a;border-radius:10px;cursor:pointer;margin-top:${photos.length?'4':'0'}px">
@@ -7427,7 +7427,7 @@ function _renderSuppTable(list, isCoach, editFn){
   </div>`;
   const sorted=[...list].sort((a,b)=>_suppTimingOrder(a)-_suppTimingOrder(b)||a.name.localeCompare(b.name,'fr'));
   return `
-    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 0 8px;border-bottom:1px solid #222">
+    <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:6px 0 8px;border-bottom:1px solid var(--border)">
       <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">Complément</div>
       <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;text-align:right;padding-right:12px">Dosage</div>
       <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">Moment(s)</div>
@@ -7467,7 +7467,7 @@ function loadSupplements(){
       </div>
       <button onclick="openSuppEdit(-1)" style="background:var(--red);border:none;color:#fff;font-family:Montserrat,sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;padding:8px 14px;border-radius:8px;cursor:pointer">+ AJOUTER</button>
     </div>
-    <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:14px">
+    <div style="background:#0f0f0f;border:1px solid var(--border);border-radius:14px;padding:14px">
       ${_renderSuppTable(list,false,'openSuppEdit')}
     </div>
     <div style="height:20px"></div>`;
@@ -7482,7 +7482,7 @@ function loadSuppEmbedded(){
       <div style="width:3px;height:20px;background:var(--red);border-radius:2px"></div>
       <h3>💊 Compléments</h3>
     </div>
-    <div style="background:#0f0f0f;border:1px solid #1a1a1a;border-radius:14px;padding:14px;margin-bottom:12px">
+    <div style="background:#0f0f0f;border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px">
       ${_renderSuppTable(list,false,'openSuppEdit')}
     </div>
     <button onclick="openSuppEdit(-1)" style="background:none;border:1px dashed #2a2a2a;border-radius:10px;color:var(--sub);font-family:Montserrat,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:10px 0;width:100%;cursor:pointer;margin-bottom:4px">+ Ajouter un complément</button>
@@ -7570,12 +7570,12 @@ function renderCoachSuppSection(c){
   const list=(c.nutrition?.supplements)||[];
   const sorted=[...list].sort((a,b)=>_suppTimingOrder(a)-_suppTimingOrder(b)||a.name.localeCompare(b.name,'fr'));
   el.innerHTML=`
-    <div style="background:#0f0f0f;border:1px solid #1c1c1c;border-radius:12px;padding:16px">
+    <div style="background:#0f0f0f;border:1px solid var(--border);border-radius:12px;padding:16px">
       <div style="font-size:9px;color:var(--red);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:14px">💊 Compléments alimentaires</div>
       <div style="margin-bottom:12px">
         ${!list.length
           ?`<div style="text-align:center;padding:16px 0;color:#333;font-size:12px">Aucun complément renseigné</div>`
-          :`<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:4px 0 8px;border-bottom:1px solid #1c1c1c;margin-bottom:2px">
+          :`<div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;padding:4px 0 8px;border-bottom:1px solid var(--border);margin-bottom:2px">
               <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">Complément</div>
               <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;padding-right:10px">Dosage</div>
               <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase">Moment(s)</div>
@@ -7596,7 +7596,7 @@ function renderCoachSuppSection(c){
         }
       </div>
       <!-- Ajout rapide coach -->
-      <div style="border-top:1px solid #1c1c1c;padding-top:12px">
+      <div style="border-top:1px solid var(--border);padding-top:12px">
         <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;font-weight:700;text-transform:uppercase;margin-bottom:10px">Ajouter un complément</div>
         <div style="display:grid;grid-template-columns:1fr 60px auto;gap:8px;margin-bottom:10px;align-items:end">
           <div>
@@ -7685,7 +7685,7 @@ function openCoachSuppEdit(idx){
   const unitOptions=unitOpts.map(u=>`<option value="${u}"${s&&s.dosage_unit===u?' selected':''}>${unitLabels[u]||u}</option>`).join('');
   const isActive=s?s.active!==false:true;
   const html=`<div id="modal-overlay" onclick="" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
-  <div style="background:#161616;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;animation:fadeIn .3s ease;max-height:90vh;overflow-y:auto">
+  <div style="background:var(--card2);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;animation:fadeIn .3s ease;max-height:90vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <h2>${s?'Modifier le complément':'Nouveau complément'}</h2>
       <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer">✕</button>
@@ -7716,7 +7716,7 @@ function openCoachSuppEdit(idx){
       <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:5px">NOTES</div>
       <input id="coach-supp-notes" class="form-input" style="padding:10px 12px;font-size:13px" placeholder="Ex: à jeun, avec repas…" value="${s?escapeHtml(s.notes||''):''}">
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px 0;border-top:1px solid #1c1c1c">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px 0;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700">Actif</div>
       <div style="display:flex;align-items:center;gap:8px">
         <span id="coach-supp-active-lbl" style="font-size:11px;color:var(--sub)">${isActive?'Oui':'Non'}</span>
@@ -7799,20 +7799,20 @@ function renderCoachCaffeineSection(c){
   const col28=avg28>0?_caffeineColor(avg28,thr):'#555';
   const colPeak=peakMg>0?_caffeineColor(peakMg,thr):'#555';
   el.innerHTML=`
-    <div style="background:#0f0f0f;border:1px solid #1c1c1c;border-radius:12px;padding:16px">
+    <div style="background:#0f0f0f;border:1px solid var(--border);border-radius:12px;padding:16px">
       <div style="font-size:9px;color:var(--red);letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:14px">☕ Caféine</div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
-        <div style="flex:1;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:10px;text-align:center">
+        <div style="flex:1;background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;margin-bottom:5px">MOY. 7J</div>
           <div style="font-size:24px;font-family:'Bebas Neue',sans-serif;color:${col7};line-height:1">${avg7||'—'}</div>
           <div style="font-size:8px;color:var(--sub);margin-top:2px">mg/j</div>
         </div>
-        <div style="flex:1;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:10px;text-align:center">
+        <div style="flex:1;background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;margin-bottom:5px">MOY. 28J</div>
           <div style="font-size:24px;font-family:'Bebas Neue',sans-serif;color:${col28};line-height:1">${avg28||'—'}</div>
           <div style="font-size:8px;color:var(--sub);margin-top:2px">mg/j</div>
         </div>
-        <div style="flex:1;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;padding:10px;text-align:center">
+        <div style="flex:1;background:#0a0a0a;border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:8px;color:var(--sub);letter-spacing:1.5px;font-weight:700;margin-bottom:5px">PIC 28J</div>
           <div style="font-size:${peakMg>999?'18':'24'}px;font-family:'Bebas Neue',sans-serif;color:${colPeak};line-height:1">${peakMg||'—'}</div>
           <div style="font-size:8px;color:var(--sub);margin-top:2px">${peakMg?peakStr:'—'}</div>

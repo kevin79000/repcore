@@ -2302,12 +2302,7 @@ const CLOUD={
   async _doPushOne(email,user){
     this._setSyncStatus('pending');
     try{
-      let token=await this._getToken();
-      if(!token){
-        const entry=currentUser?.email&&(DB.get('users')||{})[currentUser.email];
-        if(entry?.pwd) await this.signIn(currentUser.email,entry.pwd).catch(()=>{});
-        token=await this._getToken();
-      }
+      const token=await this._getToken();
       if(!token) return;
       const safeKey=email.replace(/\./g,',');
       const safe={...user};
@@ -2415,10 +2410,8 @@ const CLOUD={
     [...cloudSessions,...localSessions].forEach(s=>{if(s?.id&&!sessMap.has(s.id))sessMap.set(s.id,s);});
     const allSessions=[...sessMap.values()].sort((a,b)=>(a.date||0)-(b.date||0));
     if(!loc||((cloudUser.updatedAt||0)>=(loc.updatedAt||0))){
-      const localPwd=loc?.pwd;
       merged[email]={...cloudUser};
       delete merged[email].pwd;delete merged[email].pwdHash;
-      if(localPwd) merged[email].pwd=localPwd;
     }
     merged[email].bilans=allBilans;
     merged[email].sessions=allSessions;
@@ -2597,11 +2590,7 @@ window.onload=()=>{
           silentLogout();
           go('s-welcome');
         } else {
-          // Re-auth silencieux si pas de token Firebase (comptes créés avant le fix await)
-          if(!CLOUD.canWrite()){
-            const stored=(DB.get('users')||{})[currentUser.email];
-            if(stored?.pwd) CLOUD.signIn(currentUser.email,stored.pwd).then(()=>{if(CLOUD.canWrite())saveUser();}).catch(()=>{});
-          } else {
+          if(CLOUD.canWrite()){
             try{saveUser();}catch(e){}
             // Push immédiat non-debounced pour garantir l'envoi des données locales (profil coach pré-v144)
             setTimeout(()=>{try{const u=DB.get('users');if(u) CLOUD._doPush(u);}catch{}},800);
@@ -2760,7 +2749,6 @@ async function doRegister(){
   if(users[em]) return showErr('r-err','Email déjà utilisé.');
   const uid='u_'+Date.now();
   const user={id:uid,fname:fn,lname:ln,email:em,
-    pwd:pw,
     role:selRole,gender:gn,
     createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],coachId:null,coachName:null,
     status:'FREE',accessExpiry:null,paymentStatus:null,paypalSubscriptionId:null};
@@ -2807,22 +2795,18 @@ async function doLogin(){
     u=synced[em];
     if(!u){synced=DB.get('users')||{};u=synced[em];}
     if(!u) return rescueLogin(em,pw);
-    u.pwd=pw;synced[em]=u;DB.set('users',synced);
+    synced[em]=u;DB.set('users',synced);
     currentUser=u;DB.set('session',currentUser);
     if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){go('s-client-code');return;}
     return routeUser();
   }
 
-  if(u.pwd){
-    if(u.pwd!==pw) return showErr('l-err','Email ou mot de passe incorrect.');
-  } else {
-    // Pas de pwd local (autre appareil) — Firebase Auth fait office de vérification
-    const ok=await CLOUD.signIn(em,pw);
-    if(!ok) return showErr('l-err','Email ou mot de passe incorrect.');
-    u.pwd=pw;users[em]=u;DB.set('users',users);
-  }
+  const ok=await CLOUD.signIn(em,pw);
+  if(!ok) return showErr('l-err',CLOUD._signInErr==='network'
+    ?'Erreur réseau — vérifiez votre connexion.'
+    :'Email ou mot de passe incorrect.');
   currentUser=users[em];DB.set('session',currentUser);
-  CLOUD.signIn(em,pw).then(()=>{if(CLOUD.canWrite()) saveUser();}).catch(()=>{});
+  if(CLOUD.canWrite()) saveUser();
   if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){
     go('s-client-code');
     return;
@@ -2861,7 +2845,7 @@ function doRescue(em,pwEnc,role){
   const users=DB.get('users')||{};
   const uid='u_'+Date.now();
   const fname=em.split('@')[0];
-  const user={id:uid,fname,lname:'',email:em,pwd:pw,role,
+  const user={id:uid,fname,lname:'',email:em,role,
     createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],
     coachId:null,coachName:null,
     status:role==='coach'?'COACHING_SUIVI':'FREE',
@@ -2925,7 +2909,7 @@ async function doNewPwdRecovery(){
     let u=users[em];
     if(!u){u=(DB.get('users')||{})[em];}
     if(u){
-      u.pwd=pw;users[em]=u;DB.set('users',users);
+      users[em]=u;DB.set('users',users);
       currentUser=u;DB.set('session',currentUser);
       if(currentUser.role!=='coach'&&(currentUser.status||'FREE')==='FREE'){go('s-client-code');return;}
       return routeUser();
@@ -9071,10 +9055,6 @@ function saveUser(){
   DB.set('session',currentUser);
   if(CLOUD.canWrite()){
     CLOUD.push(users);
-  } else if(currentUser.pwd){
-    CLOUD.signIn(currentUser.email,currentUser.pwd)
-      .then(()=>{if(CLOUD.canWrite()) CLOUD.push(DB.get('users')||{});})
-      .catch(()=>{});
   }
 }
 function silentLogout(){DB.del('session');currentUser=null;CLOUD.signOut();}
@@ -9986,7 +9966,7 @@ async function createAthlete(){
   }
   const {token,payload}=gen;
   const expiry=payload.expiry;
-  const athlete={id:uid,fname:fn,lname:ln,email:em,pwd:pw,role:'athlete',gender:gn,
+  const athlete={id:uid,fname:fn,lname:ln,email:em,role:'athlete',gender:gn,
     createdAt:Date.now(),streak:0,lastSession:null,sessions:[],bilans:[],nutrition:{},videos:[],
     coachId:currentUser.id,coachName:currentUser.fname+' '+currentUser.lname,
     status:'COACHING_SUIVI',accessExpiry:expiry,questionnaireComplete:false};

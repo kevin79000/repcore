@@ -7512,7 +7512,7 @@ function renderCoachSuppSection(c){
             </div>
             ${sorted.map((s,i)=>{
               const realIdx=list.indexOf(s);
-              return `<div class="supp-row" style="opacity:${s.active===false?.45:1}">
+              return `<div class="supp-row" style="opacity:${s.active===false?.45:1};cursor:pointer" onclick="openCoachSuppEdit(${realIdx})">
                 <div style="flex:1;min-width:0">
                   <div style="font-size:12px;font-weight:700;color:${s.active===false?'#444':'#fff'}">${escapeHtml(s.name)}</div>
                   ${s.notes?`<div style="font-size:10px;color:#555;margin-top:1px;font-style:italic">${escapeHtml(s.notes)}</div>`:''}
@@ -7521,7 +7521,6 @@ function renderCoachSuppSection(c){
                   <div style="font-size:12px;font-weight:800;color:var(--red)">${s.dosage_quantity||'—'}<span style="font-size:8px;color:var(--sub);font-weight:400">${s.dosage_quantity?' '+s.dosage_unit:''}</span></div>
                 </div>
                 <div style="flex-shrink:0;max-width:110px">${_suppTimingTags(s.timings,true)}</div>
-                <button onclick="deleteClientSuppEntry(${realIdx})" style="flex-shrink:0;background:none;border:none;color:#333;font-size:18px;cursor:pointer;padding:0 4px;margin-left:4px">×</button>
               </div>`;
             }).join('')}`
         }
@@ -7600,6 +7599,107 @@ function deleteClientSuppEntry(index){
   if(!c||!Array.isArray(c.nutrition?.supplements)) return;
   c.nutrition.supplements.splice(index,1);
   c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  renderCoachSuppSection(c);
+}
+
+function openCoachSuppEdit(idx){
+  document.getElementById('modal-overlay')?.remove();
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c) return;
+  const list=c.nutrition?.supplements||[];
+  const s=idx>=0?list[idx]:null;
+  const timingChips=TIMINGS_LIST.map(t=>`<button type="button" class="supp-timing-chip${s&&(s.timings||[]).includes(t.id)?' active':''}" onclick="this.classList.toggle('active')">${t.label}</button>`).join('');
+  const unitOpts=['g','mg','mcg','ml','gélule(s)','comprimé(s)','scoop(s)','cuillère(s)'];
+  const unitLabels={'gélule(s)':'gél.','comprimé(s)':'cpr.','scoop(s)':'scoop','cuillère(s)':'c.à.s'};
+  const unitOptions=unitOpts.map(u=>`<option value="${u}"${s&&s.dosage_unit===u?' selected':''}>${unitLabels[u]||u}</option>`).join('');
+  const isActive=s?s.active!==false:true;
+  const html=`<div id="modal-overlay" onclick="" style="position:fixed;inset:0;background:#000c;z-index:2000;display:flex;align-items:flex-end;justify-content:center">
+  <div style="background:#161616;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;animation:fadeIn .3s ease;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2>${s?'Modifier le complément':'Nouveau complément'}</h2>
+      <button onclick="closeModal()" style="background:none;border:none;color:var(--sub);font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:5px">NOM</div>
+      <input id="coach-supp-name" list="coach-supp-name-list" class="form-input" style="padding:10px 12px;font-size:13px" placeholder="Créatine…" value="${s?escapeHtml(s.name):''}">
+      <datalist id="coach-supp-name-list">${SUPPLEMENTS_LIST.map(n=>`<option value="${escapeHtml(n)}">`).join('')}</datalist>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:14px;align-items:end">
+      <div>
+        <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:5px">DOSAGE</div>
+        <input id="coach-supp-qty" type="number" min="0" step="any" class="form-input" style="padding:10px 12px;font-size:13px" placeholder="5" value="${s&&s.dosage_quantity?s.dosage_quantity:''}">
+      </div>
+      <div>
+        <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:5px">UNITÉ</div>
+        <div style="position:relative">
+          <select id="coach-supp-unit" class="form-input" style="padding:10px 28px 10px 12px;font-size:13px;appearance:none;-webkit-appearance:none">${unitOptions}</select>
+          <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--sub);font-size:10px">▼</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:6px">MOMENT(S) <span style="color:var(--red)">*</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="coach-supp-timings">${timingChips}</div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:9px;color:var(--sub);letter-spacing:1.5px;margin-bottom:5px">NOTES</div>
+      <input id="coach-supp-notes" class="form-input" style="padding:10px 12px;font-size:13px" placeholder="Ex: à jeun, avec repas…" value="${s?escapeHtml(s.notes||''):''}">
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:12px 0;border-top:1px solid #1c1c1c">
+      <div style="font-size:12px;font-weight:700">Actif</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="coach-supp-active-lbl" style="font-size:11px;color:var(--sub)">${isActive?'Oui':'Non'}</span>
+        <input type="checkbox" id="coach-supp-active" style="width:16px;height:16px;cursor:pointer" ${isActive?'checked':''}
+          onchange="document.getElementById('coach-supp-active-lbl').textContent=this.checked?'Oui':'Non'">
+      </div>
+    </div>
+    <input type="hidden" id="coach-supp-idx" value="${idx}">
+    <button onclick="saveCoachSuppEdit()" style="width:100%;padding:13px 0;background:var(--red);border:none;color:#fff;font-family:Montserrat,sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;border-radius:10px;cursor:pointer;margin-bottom:10px">SAUVEGARDER</button>
+    ${s?`<button onclick="deleteCoachSuppEdit(${idx})" style="width:100%;padding:11px 0;background:none;border:1px solid #333;color:#666;font-family:Montserrat,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;border-radius:10px;cursor:pointer">SUPPRIMER CE COMPLÉMENT</button>`:''}
+  </div></div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function saveCoachSuppEdit(){
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c) return;
+  const name=(document.getElementById('coach-supp-name').value||'').trim();
+  const qty=parseFloat(document.getElementById('coach-supp-qty').value);
+  const unit=document.getElementById('coach-supp-unit').value;
+  const notes=(document.getElementById('coach-supp-notes').value||'').trim();
+  const active=document.getElementById('coach-supp-active').checked;
+  const idx=parseInt(document.getElementById('coach-supp-idx').value);
+  const timings=Array.from(document.querySelectorAll('#coach-supp-timings .supp-timing-chip.active')).map(b=>{
+    const txt=b.textContent.trim();
+    return (TIMINGS_LIST.find(t=>t.label===txt)||{id:txt}).id;
+  });
+  if(!name){toast('Saisis un nom','var(--orange)');return;}
+  if(!qty||qty<=0){toast('Saisis un dosage','var(--orange)');return;}
+  if(!timings.length){toast('Sélectionne au moins un moment','var(--orange)');return;}
+  if(!c.nutrition) c.nutrition={};
+  if(!Array.isArray(c.nutrition.supplements)) c.nutrition.supplements=[];
+  const entry={name,dosage_quantity:qty,dosage_unit:unit,timings,notes,active};
+  if(idx>=0&&idx<c.nutrition.supplements.length){
+    c.nutrition.supplements[idx]={...c.nutrition.supplements[idx],...entry};
+  } else {
+    c.nutrition.supplements.push({id:Date.now(),...entry});
+  }
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  toast(idx>=0?'Complément mis à jour ✓':'Complément ajouté ✓');
+  closeModal();
+  renderCoachSuppSection(c);
+}
+
+function deleteCoachSuppEdit(idx){
+  const users=DB.get('users')||{};
+  const c=Object.values(users).find(u=>u.id===currentClientId);
+  if(!c||!Array.isArray(c.nutrition?.supplements)) return;
+  c.nutrition.supplements.splice(idx,1);
+  c.updatedAt=Date.now();users[c.email]=c;DB.set('users',users);CLOUD.pushOne(c.email,c);
+  toast('Complément supprimé');
+  closeModal();
   renderCoachSuppSection(c);
 }
 

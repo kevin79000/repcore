@@ -8155,11 +8155,11 @@ function saveCaffeineCustom(){
 }
 
 // ======= VIDEOS =======
-function _videoEmbed(url){
+function _videoEmbed(url,vidId='vc-video'){
   if(!url) return '';
   const ytM=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
   if(ytM) return `<iframe src="https://www.youtube.com/embed/${ytM[1]}" frameborder="0" allowfullscreen style="width:100%;height:190px;border-radius:8px;margin-top:8px"></iframe>`;
-  if(/\.(mp4|mov|webm|mkv)(\?|$)/i.test(url)) return `<video src="${url}" controls preload="none" style="width:100%;border-radius:8px;margin-top:8px;max-height:220px;background:#000"></video>`;
+  if(/\.(mp4|mov|webm|mkv)(\?|$)/i.test(url)) return `<video id="${vidId}" src="${url}" controls preload="none" style="width:100%;border-radius:8px;margin-top:8px;max-height:220px;background:#000"></video>`;
   return `<a href="${url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px 14px;background:var(--card2);border-radius:8px;color:var(--red);font-size:12px;font-weight:700;text-decoration:none">▶ Voir la vidéo</a>`;
 }
 function loadVideos(){
@@ -8170,7 +8170,7 @@ function loadVideos(){
     vids.map(v=>{
       const hasFb=v.feedback||v.feedbackTimestamps?.length;
       const tsBlock=v.feedbackTimestamps?.length
-        ?`<div style="margin-top:8px">${[...v.feedbackTimestamps].sort((a,b)=>tsToSecs(a.ts)-tsToSecs(b.ts)).map(t=>{const isA=!!t.audioUrl;return`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #111;align-items:${isA?'flex-start':'center'}"><span style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--red);flex-shrink:0;min-width:36px;margin-top:${isA?'3px':'0'}">${t.ts}</span>${isA?`<audio src="${t.audioUrl}" controls style="flex:1;height:32px"></audio>`:`<span style="font-size:12px;color:#ccc">${t.note}</span>`}</div>`;}).join('')}</div>`:'';
+        ?`<div style="margin-top:8px">${[...v.feedbackTimestamps].sort((a,b)=>tsToSecs(a.ts)-tsToSecs(b.ts)).map(t=>{const isA=!!t.audioUrl;return`<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #111;align-items:${isA?'flex-start':'center'}"><span onclick="const _v=document.getElementById('vc-video-${v.id}');if(_v)_v.currentTime=tsToSecs('${t.ts}')" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--red);flex-shrink:0;min-width:36px;margin-top:${isA?'3px':'0'};cursor:pointer" title="▶ ${t.ts}">${t.ts}</span>${isA?`<audio src="${t.audioUrl}" controls style="flex:1;height:32px"></audio>`:`<span style="font-size:12px;color:#ccc">${t.note}</span>`}</div>`;}).join('')}</div>`:'';
       const fbBlock=hasFb?`<div style="background:var(--card2);border-radius:8px;padding:10px;margin-top:10px;font-size:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="color:var(--sub);font-size:10px;font-weight:700">FEEDBACK COACH</span>${v.feedbackDate?`<span style="font-size:10px;color:#444">${new Date(v.feedbackDate).toLocaleDateString('fr-FR')}</span>`:''}</div>
         ${v.feedback?`<p style="margin:0;line-height:1.5">${escapeHtml(v.feedback)}</p>`:''}${tsBlock}</div>`:'';
@@ -8178,10 +8178,31 @@ function loadVideos(){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div style="font-weight:700;font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(v.name)}</div>
         <span class="badge ${hasFb?'badge-green':'badge-orange'}" style="margin-left:8px;flex-shrink:0">${hasFb?'✓ Corrigée':'En attente'}</span>
+        <button onclick="if(confirm('Supprimer cette vidéo ?'))deleteVideo('${currentUser.email}','${v.id}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:18px;line-height:1;padding:0 0 0 8px;flex-shrink:0" title="Supprimer">×</button>
       </div>
       <div class="sub" style="font-size:11px">${new Date(v.date).toLocaleDateString('fr-FR')}</div>
-      ${_videoEmbed(v.url)}${fbBlock}</div>`;
+      ${_videoEmbed(v.url,'vc-video-'+v.id)}${fbBlock}</div>`;
     }).join('');
+}
+async function deleteVideo(email,videoId){
+  const users=DB.get('users')||{};
+  const u=users[email];
+  if(!u||!Array.isArray(u.videos)) return;
+  const vid=u.videos.find(v=>v.id===videoId);
+  if(!vid) return;
+  u.videos=u.videos.filter(v=>v.id!==videoId);
+  u.updatedAt=Date.now();
+  users[email]=u;
+  DB.set('users',users);
+  if(currentUser?.email===email){currentUser.videos=u.videos;currentUser.updatedAt=u.updatedAt;}
+  CLOUD.pushOne(email,u);
+  // Suppression Cloudinary via Cloud Function signée — l'API secret reste côté serveur
+  if(vid.cloudinaryPublicId){
+    try{await CLOUD._callFn('deleteCloudinaryVideo',{publicId:vid.cloudinaryPublicId,cloudName:vid.cloudinaryName||'dntu57ml'});}
+    catch(e){toast('Vidéo retirée — suppression Cloudinary échouée : '+e.message,'var(--orange)');loadVideos();return;}
+  }
+  toast('Vidéo supprimée','var(--green)');
+  loadVideos();
 }
 function addVideoLink(){
   const inp=document.getElementById('vid-url-input');
@@ -8228,7 +8249,7 @@ async function uploadVideoFile(input){
     if(data.error) throw new Error(data.error.message);
     const url=data.secure_url;
     const name=file.name.replace(/\.(mp4|mov|webm|mkv|avi)$/i,'');
-    const entry={id:'v_'+Date.now(),name,url,date:Date.now(),size:Math.round(file.size/1024/1024*10)/10+' Mo',feedback:null};
+    const entry={id:'v_'+Date.now(),name,url,date:Date.now(),size:Math.round(file.size/1024/1024*10)/10+' Mo',feedback:null,cloudinaryPublicId:data.public_id,cloudinaryName:cloudName};
     if(currentUser?.email!==targetEmail){
       // Session changée pendant l'upload — écrire directement dans le compte cible
       const allUsers=DB.get('users')||{};
@@ -8378,7 +8399,7 @@ function _renderTsAnnotations(){
     ?sorted.map((t,i)=>{
         const isAudio=!!t.audioUrl;
         return `<div style="display:flex;align-items:${isAudio?'flex-start':'center'};gap:8px;padding:6px 0;border-bottom:1px solid #1a1a1a">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--red);flex-shrink:0;min-width:36px;margin-top:${isAudio?'3px':'0'}">${t.ts}</span>
+          <span onclick="const _v=document.getElementById('vc-video');if(_v)_v.currentTime=tsToSecs('${t.ts}')" style="font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--red);flex-shrink:0;min-width:36px;margin-top:${isAudio?'3px':'0'};cursor:pointer" title="▶ ${t.ts}">${t.ts}</span>
           ${isAudio
             ?`<div style="flex:1"><audio src="${t.audioUrl}" controls style="height:32px;width:100%;margin-bottom:2px"></audio><div style="font-size:10px;color:var(--sub)">🎤 message audio</div></div>`
             :`<span style="flex:1;font-size:12px">${escapeHtml(t.note)}</span>`}

@@ -545,24 +545,30 @@ const COACH_PHOTO='icons/coach.jpg';
 </div>
 
 <!-- ATHLETE ENTRY -->
-<div id="s-athlete-entry" class="screen">
-  <div class="topbar" style="border-bottom:1px solid var(--border)">
+<div id="s-athlete-entry" class="screen carbon-bg" style="position:relative">
+
+  <!-- Topbar — bandeau uni avec séparation visuelle identique coach -->
+  <div class="topbar" style="border-bottom:1px solid var(--red);box-shadow:0 6px 28px rgba(0,0,0,.9);position:relative;z-index:2;background:#090909">
     <button class="back-btn" onclick="go('s-welcome')">←</button>
     <div style="height:32px;display:flex;align-items:center;gap:6px">
       <img src="./icons/logo.png" style="display:block;height:52px;width:52px;margin:-8px 0">
     </div>
     <span></span>
   </div>
-  <div class="pad scroll-area" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px">
+
+  <!-- Vignette bords corps de page -->
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 90% 78% at 50% 58%,transparent 22%,rgba(0,0,0,.48) 62%,rgba(0,0,0,.88) 100%)"></div>
+
+  <div class="pad scroll-area" style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;position:relative;z-index:1">
 
     <!-- Header -->
     <div style="margin-bottom:8px">
       <div style="width:24px;height:2px;background:var(--red);margin-bottom:14px"></div>
-      <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px">Espace Athlète</div>
-      <div class="sub" style="font-size:12px;margin-top:6px">Première visite ou retour&nbsp;?</div>
+      <div style="font-size:26px;font-weight:900;letter-spacing:-0.5px;text-transform:uppercase;color:var(--red)">ESPACE ATHLÈTE</div>
+      <div class="sub" style="font-size:12px;margin-top:6px">Accès réservé aux athlètes suivis sur RepCore.</div>
     </div>
 
-    <!-- Carte A : nouveau — j'ai un code, ça crée mon compte et active l'accès -->
+    <!-- Carte A : j'ai un code coach -->
     <div id="ae-card-new" onclick="aeToggleCode()" style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(224,32,32,.4)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:10px;background:#1a0000;border:1px solid #3a0000;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
@@ -581,7 +587,7 @@ const COACH_PHOTO='icons/coach.jpg';
       </div>
     </div>
 
-    <!-- Carte B : déjà inscrit — juste se reconnecter -->
+    <!-- Carte B : déjà inscrit -->
     <div onclick="go('s-login')" style="background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='rgba(224,32,32,.4)'" onmouseout="this.style.borderColor='var(--border)'">
       <div style="display:flex;align-items:center;gap:14px">
         <div style="width:44px;height:44px;border-radius:10px;background:#0d0d0d;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -591,6 +597,12 @@ const COACH_PHOTO='icons/coach.jpg';
         </div>
         <div style="margin-left:auto;color:var(--sub);font-size:18px">›</div>
       </div>
+    </div>
+
+    <!-- Info box athlète -->
+    <div style="background:rgba(224,32,32,.07);border:1px solid rgba(224,32,32,.24);border-radius:10px;padding:14px 16px;margin-top:4px">
+      <div style="font-size:10px;letter-spacing:1.5px;color:var(--red);font-weight:700;margin-bottom:6px">ℹ️ ESPACE ATHLÈTE</div>
+      <div style="font-size:11px;color:rgba(224,32,32,.72);line-height:1.6">Un code d'accès est requis pour rejoindre l'app. Demande-le à ton coach RepCore.</div>
     </div>
 
   </div>

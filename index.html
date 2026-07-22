@@ -6027,6 +6027,16 @@ function _renderBilanChoiceUI(){
     btn.style.color=active?'#fff':'var(--sub)';
     btn.style.border=active?'1px solid var(--red)':'1px solid var(--border)';
   });
+  _updateBilanCountdown();
+  if(window._bilanCdInterval) clearInterval(window._bilanCdInterval);
+  window._bilanCdInterval=setInterval(()=>{
+    if(!document.getElementById('s-bilan-choice')?.classList.contains('active')){
+      clearInterval(window._bilanCdInterval);window._bilanCdInterval=null;return;
+    }
+    _updateBilanCountdown();
+  },60000);
+}
+function _updateBilanCountdown(){
   const cd=document.getElementById('bilan-countdown');
   if(!cd) return;
   cd.style.display='block';
@@ -6035,16 +6045,21 @@ function _renderBilanChoiceUI(){
     cd.innerHTML=`⏱ Après ton 1er bilan, ton prochain rendez-vous apparaîtra ici.`;
     return;
   }
-  const today=new Date();today.setHours(0,0,0,0);
-  const days=Math.round((next.getTime()-today.getTime())/86400000);
+  const now=new Date();
+  const diffMs=next.getTime()-now.getTime();
   const dateLabel=next.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-  if(days<=0){
+  if(diffMs<=0){
     cd.innerHTML=`⏰ <strong style="color:var(--red)">C'est le moment !</strong> Ton bilan est prévu ce ${dateLabel} — complète-le maintenant.`;
-  } else if(days===1){
-    cd.innerHTML=`⏱ Prochain bilan <strong style="color:#fff">demain</strong> (${dateLabel}) — prépare-toi !`;
-  } else {
-    cd.innerHTML=`⏱ Prochain bilan le <strong style="color:#fff">${dateLabel}</strong> — il te reste <strong style="color:#fff">${days} jours</strong>.`;
+    return;
   }
+  const totalMins=Math.floor(diffMs/60000);
+  const days=Math.floor(totalMins/1440);
+  const hours=Math.floor((totalMins%1440)/60);
+  const mins=totalMins%60;
+  const countdownHtml=days>=1
+    ?`<strong style="color:#fff;font-size:16px">${days}j ${hours}h</strong>`
+    :`<strong style="color:var(--red);font-size:16px">${hours}h ${mins}min</strong>`;
+  cd.innerHTML=`⏱ Prochain bilan : <strong style="color:#fff">${dateLabel}</strong><br><span style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.4px">Il te reste </span>${countdownHtml}`;
 }
 function openBilan(type){
   bilType=type;bilStep=0;bilData={};_bilPhotoLoading=0;
@@ -6310,17 +6325,16 @@ function saveBilanFinal(){
 
 // ======= NOTIFICATIONS BILAN (toutes les 2 semaines, samedi 7h) =======
 function getNextBilanSaturday(){
-  // Retourne le prochain samedi de bilan à venir (>= aujourd'hui)
   const bilans=currentUser.bilans||[];
   if(!bilans.length) return null;
   const freq=currentUser._bilanFreq||2;
   const sorted=bilans.slice().sort((a,b)=>a.date-b.date);
-  const anchor=new Date(sorted[0].date);
+  // Ancre sur le DERNIER bilan (pas le premier)
+  const anchor=new Date(sorted[sorted.length-1].date);
   anchor.setDate(anchor.getDate()+freq*7);
   const dow=anchor.getDay();
   anchor.setDate(anchor.getDate()+(dow===6?0:6-dow));
   anchor.setHours(0,0,0,0);
-  // Avancer par cycles jusqu'au prochain samedi >= aujourd'hui
   const today=new Date();today.setHours(0,0,0,0);
   const cycleMs=freq*7*24*3600*1000;
   while(anchor.getTime()<today.getTime()) anchor.setTime(anchor.getTime()+cycleMs);
@@ -6335,7 +6349,7 @@ function isBilanNotifDay(){
   if(now.getDay()!==6) return false; // doit être un samedi
   const freq=currentUser._bilanFreq||2;
   const sorted=bilans.slice().sort((a,b)=>a.date-b.date);
-  const anchor=new Date(sorted[0].date);
+  const anchor=new Date(sorted[sorted.length-1].date);
   anchor.setDate(anchor.getDate()+freq*7);
   const dow=anchor.getDay();
   anchor.setDate(anchor.getDate()+(dow===6?0:6-dow));

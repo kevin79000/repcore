@@ -6338,11 +6338,14 @@ function getNextBilanSaturday(){
   if(!bilans.length) return null;
   const freq=currentUser._bilanFreq||2;
   const sorted=bilans.slice().sort((a,b)=>a.date-b.date);
-  const anchor=_bilanAnchorSat(sorted[sorted.length-1].date,freq);
+  // Prochain bilan = dernier bilan + freq*7 jours (jamais plus de freq*7 jours)
+  const next=new Date(sorted[sorted.length-1].date);
+  next.setDate(next.getDate()+freq*7);
+  next.setHours(0,0,0,0);
   const today=new Date();today.setHours(0,0,0,0);
   const cycleMs=freq*7*24*3600*1000;
-  while(anchor.getTime()<today.getTime()) anchor.setTime(anchor.getTime()+cycleMs);
-  return anchor;
+  while(next.getTime()<today.getTime()) next.setTime(next.getTime()+cycleMs);
+  return next;
 }
 function isBilanNotifDay(){
   const bilans=currentUser.bilans||[];

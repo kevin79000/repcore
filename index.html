@@ -1752,7 +1752,7 @@ const COACH_PHOTO='icons/coach.jpg';
 
     <!-- Bilan coaching -->
     <div onclick="openBilan('coaching')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;cursor:pointer;margin-bottom:14px">
-      <div style="font-weight:900;font-size:15px;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase">📊 BILAN COACHING</div>
+      <div style="font-weight:900;font-size:15px;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;color:var(--red)">BILAN COACHING</div>
       <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:#ddd">Bilan toutes les <span id="bilan-freq-display">2 semaines</span> :</div>
       <div class="sub" style="font-size:12px;line-height:1.5">Poids, mensurations, ressenti, photos.</div>
       <div style="font-size:11px;color:#666;margin-top:10px;line-height:1.65;border-top:1px solid #1e1e1e;padding-top:10px">
@@ -6011,19 +6011,18 @@ function _renderBilanChoiceUI(){
   });
   const cd=document.getElementById('bilan-countdown');
   if(!cd) return;
-  const bilans=(currentUser.bilans||[]).filter(b=>b.type==='coaching');
-  if(!bilans.length){cd.style.display='none';return;}
-  const last=bilans.slice().sort((a,b)=>a.date-b.date).pop();
-  const lastDate=new Date(last.date);lastDate.setHours(0,0,0,0);
-  const nextDue=new Date(lastDate);
-  nextDue.setDate(nextDue.getDate()+freq*7);
+  const next=getNextBilanSaturday();
+  if(!next){cd.style.display='none';return;}
   const today=new Date();today.setHours(0,0,0,0);
-  const days=Math.round((nextDue.getTime()-today.getTime())/86400000);
+  const days=Math.round((next.getTime()-today.getTime())/86400000);
+  const dateLabel=next.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   cd.style.display='block';
   if(days<=0){
-    cd.innerHTML='⏰ <strong style="color:var(--red)">C\'est le moment !</strong> Ton bilan est disponible — complète-le maintenant.';
+    cd.innerHTML=`⏰ <strong style="color:var(--red)">C'est le moment !</strong> Ton bilan est prévu ce ${dateLabel} — complète-le maintenant.`;
+  } else if(days===1){
+    cd.innerHTML=`⏱ Prochain bilan <strong style="color:#fff">demain</strong> (${dateLabel}) — prépare-toi !`;
   } else {
-    cd.innerHTML=`⏱ Il te reste <strong style="color:#fff">${days} jour${days>1?'s':''}</strong> pour compléter ton prochain bilan.`;
+    cd.innerHTML=`⏱ Prochain bilan le <strong style="color:#fff">${dateLabel}</strong> — il te reste <strong style="color:#fff">${days} jours</strong>.`;
   }
 }
 function openBilan(type){
@@ -6290,27 +6289,39 @@ function saveBilanFinal(){
 
 // ======= NOTIFICATIONS BILAN (toutes les 2 semaines, samedi 7h) =======
 function getNextBilanSaturday(){
+  // Retourne le prochain samedi de bilan à venir (>= aujourd'hui)
   const bilans=currentUser.bilans||[];
   if(!bilans.length) return null;
   const freq=currentUser._bilanFreq||2;
   const sorted=bilans.slice().sort((a,b)=>a.date-b.date);
-  const base=new Date(sorted[0].date);
-  base.setDate(base.getDate()+freq*7);
-  const dow=base.getDay();
-  const toSat=dow===6?0:(6-dow);
-  base.setDate(base.getDate()+toSat);
-  base.setHours(0,0,0,0);
-  return base;
+  const anchor=new Date(sorted[0].date);
+  anchor.setDate(anchor.getDate()+freq*7);
+  const dow=anchor.getDay();
+  anchor.setDate(anchor.getDate()+(dow===6?0:6-dow));
+  anchor.setHours(0,0,0,0);
+  // Avancer par cycles jusqu'au prochain samedi >= aujourd'hui
+  const today=new Date();today.setHours(0,0,0,0);
+  const cycleMs=freq*7*24*3600*1000;
+  while(anchor.getTime()<today.getTime()) anchor.setTime(anchor.getTime()+cycleMs);
+  return anchor;
 }
 function isBilanNotifDay(){
-  const start=getNextBilanSaturday();
-  if(!start) return false;
-  const today=new Date();today.setHours(0,0,0,0);
+  // Vérifie si AUJOURD'HUI est un samedi de bilan planifié
+  const bilans=currentUser.bilans||[];
+  if(!bilans.length) return false;
   const now=new Date();
   if(now.getHours()<7) return false;
-  const diff=today.getTime()-start.getTime();
-  if(diff<0) return false;
+  if(now.getDay()!==6) return false; // doit être un samedi
   const freq=currentUser._bilanFreq||2;
+  const sorted=bilans.slice().sort((a,b)=>a.date-b.date);
+  const anchor=new Date(sorted[0].date);
+  anchor.setDate(anchor.getDate()+freq*7);
+  const dow=anchor.getDay();
+  anchor.setDate(anchor.getDate()+(dow===6?0:6-dow));
+  anchor.setHours(0,0,0,0);
+  const today=new Date();today.setHours(0,0,0,0);
+  const diff=today.getTime()-anchor.getTime();
+  if(diff<0) return false;
   const cycle=freq*7*24*3600*1000;
   return Math.round(diff/cycle)*cycle===diff;
 }

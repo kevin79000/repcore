@@ -1788,7 +1788,7 @@ const COACH_PHOTO='icons/coach.jpg';
     </div>
 
     <!-- Countdown prochain bilan -->
-    <div id="bilan-countdown" style="display:none;background:var(--surface-1);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:var(--sub);text-align:center;line-height:1.7"></div>
+    <div id="bilan-countdown" style="display:none;margin-bottom:14px"></div>
 
     <button class="btn btn-outline" onclick="go('s-client-home')">Annuler</button>
   </div>
@@ -6042,24 +6042,30 @@ function _updateBilanCountdown(){
   cd.style.display='block';
   const next=getNextBilanSaturday();
   if(!next){
-    cd.innerHTML=`⏱ Après ton 1er bilan, ton prochain rendez-vous apparaîtra ici.`;
+    cd.innerHTML=`<div style="text-align:center;padding:14px 12px;font-size:12px;color:var(--sub);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px">Après ton 1er bilan, ton prochain rendez-vous apparaîtra ici.</div>`;
     return;
   }
   const now=new Date();
   const diffMs=next.getTime()-now.getTime();
   const dateLabel=next.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   if(diffMs<=0){
-    cd.innerHTML=`⏰ <strong style="color:var(--red)">C'est le moment !</strong> Ton bilan est prévu ce ${dateLabel} — complète-le maintenant.`;
+    cd.innerHTML=`<div style="background:linear-gradient(135deg,#c10000,#7a0000);border-radius:12px;padding:20px 16px;text-align:center;box-shadow:0 0 32px rgba(224,32,32,.35)"><div style="font-size:17px;font-weight:900;color:#fff;letter-spacing:.5px;text-transform:uppercase">C'est le moment !</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:6px">Ton bilan est prévu aujourd'hui — complète-le maintenant.</div></div>`;
     return;
   }
   const totalMins=Math.floor(diffMs/60000);
   const days=Math.floor(totalMins/1440);
   const hours=Math.floor((totalMins%1440)/60);
   const mins=totalMins%60;
-  const countdownHtml=days>=1
-    ?`<strong style="color:#fff;font-size:16px">${days}j ${hours}h</strong>`
-    :`<strong style="color:var(--red);font-size:16px">${hours}h ${mins}min</strong>`;
-  cd.innerHTML=`⏱ Prochain bilan : <strong style="color:#fff">${dateLabel}</strong><br><span style="color:var(--sub);font-size:11px;text-transform:uppercase;letter-spacing:.4px">Il te reste </span>${countdownHtml}`;
+  const pad=n=>String(n).padStart(2,'0');
+  const blocks=days>0
+    ?[{v:pad(days),l:'JOURS',red:true},{v:pad(hours),l:'HEURES',red:false},{v:pad(mins),l:'MIN',red:false}]
+    :[{v:pad(hours),l:'HEURES',red:true},{v:pad(mins),l:'MIN',red:false}];
+  cd.innerHTML=`<div style="background:linear-gradient(160deg,#1a0000 0%,#0d0d0d 60%);border:1px solid rgba(224,32,32,.22);border-radius:12px;padding:16px 14px 14px;position:relative;overflow:hidden;box-shadow:0 0 28px rgba(224,32,32,.07),0 6px 20px rgba(0,0,0,.55)">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,rgba(224,32,32,.95),rgba(224,32,32,.15),transparent)"></div>
+    <div style="font-size:9px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:3px">Prochain bilan</div>
+    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:14px">${dateLabel}</div>
+    <div style="display:flex;gap:6px">${blocks.map(b=>`<div style="flex:1;background:${b.red?'rgba(224,32,32,.13)':'rgba(255,255,255,.03)'};border:1px solid ${b.red?'rgba(224,32,32,.28)':'rgba(255,255,255,.07)'};border-radius:8px;padding:12px 6px;text-align:center"><div style="font-size:36px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;color:${b.red?'var(--red)':'#fff'}${b.red?';text-shadow:0 0 18px rgba(224,32,32,.55)':''}">${b.v}</div><div style="font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:5px">${b.l}</div></div>`).join('')}</div>
+  </div>`;
 }
 function openBilan(type){
   bilType=type;bilStep=0;bilData={};_bilPhotoLoading=0;

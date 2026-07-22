@@ -18,6 +18,9 @@ setGlobalOptions({ region: "europe-west1" });
 
 const TOKEN_SECRET = defineSecret("RCACCESS_TOKEN_SECRET");
 const PAYPAL_CLIENT_SECRET = defineSecret("PAYPAL_CLIENT_SECRET");
+const CLOUDINARY_API_SECRET = defineSecret("CLOUDINARY_API_SECRET");
+const CLOUDINARY_API_KEY = defineSecret("CLOUDINARY_API_KEY");
+const OCR_SPACE_API_KEY = defineSecret("OCR_SPACE_API_KEY");
 
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 const CREATOR_EMAIL = "guellec.coachingpro@gmail.com";
@@ -360,4 +363,130 @@ exports.verifyPaypalSubscription = onCall({ secrets: [PAYPAL_CLIENT_SECRET] }, a
 
   await db.ref().update(updates);
   return { ok: true };
+});
+
+// ── getCloudinarySignature ───────────────────────────────────────────────────
+// Génère une signature SHA1 Cloudinary pour un upload signé côté serveur.
+// L'API secret ne quitte jamais le serveur — seul le hash est renvoyé au client.
+// Tout utilisateur authentifié Firebase peut obtenir une signature (coaches et
+// athlètes uploadent tous via Cloudinary).
+exports.getCloudinarySignature = onCall(
+  { secrets: [CLOUDINARY_API_SECRET, CLOUDINARY_API_KEY] },
+  async (request) => {
+    if (!request.auth || !request.auth.token || !request.auth.token.email) {
+      throw new HttpsError("unauthenticated", "Connecte-toi pour effectuer cette action.");
+    }
+    const folder = String(request.data && request.data.folder || "").trim();
+    const uploadPreset = String(request.data && request.data.uploadPreset || "").trim();
+    const timestamp = parseInt(request.data && request.data.timestamp);
+    if (!folder.startsWith("repcore/") || folder.length > 200) {
+      throw new HttpsError("invalid-argument", "Dossier de destination invalide.");
+    }
+    if (!uploadPreset || uploadPreset.length > 100) {
+      throw new HttpsError("invalid-argument", "Upload preset invalide.");
+    }
+    if (!timestamp || Math.abs(Date.now() / 1000 - timestamp) > 300) {
+      throw new HttpsError("invalid-argument", "Timestamp invalide ou expiré (fenêtre ±5 min).");
+    }
+    // Signature Cloudinary : SHA1(params triés par clé + api_secret)
+    // Les paramètres qui entrent dans la signature sont exactement ceux envoyés
+    // dans le FormData, hors file, resource_type, cloud_name et api_key.
+    const params = { folder, timestamp, upload_preset: uploadPreset };
+    const paramStr = Object.keys(params).sort().map((k) => `${k}=${params[k]}`).join("&");
+    const signature = crypto.createHash("sha1")
+      .update(paramStr + CLOUDINARY_API_SECRET.value())
+      .digest("hex");
+    return { signature, timestamp, apiKey: CLOUDINARY_API_KEY.value() };
+  }
+);
+
+// ── ocrParseImage ─────────────────────────────────────────────────────────────
+// Proxy OCR.space — la clé API ne quitte jamais le serveur.
+// Tout utilisateur Firebase authentifié peut appeler cette fonction (coaches
+// et athlètes utilisent tous les deux l'import de fiche d'entraînement par photo).
+exports.ocrParseImage = onCall(
+  { secrets: [OCR_SPACE_API_KEY] },
+  async (request) => {
+    if (!request.auth || !request.auth.token || !request.auth.token.email) {
+      throw new HttpsError("unauthenticated", "Connecte-toi pour effectuer cette action.");
+    }
+    const dataUrl = String(request.data && request.data.dataUrl || "");
+    if (!dataUrl.startsWith("data:image/")) {
+      throw new HttpsError("invalid-argument", "Format d'image invalide.");
+    }
+    // 1.5 MB base64 ≈ 1.1 MB binaire — cohérent avec la limite ~900 KB imposée côté client
+    if (dataUrl.length > 1.5 * 1024 * 1024) {
+      throw new HttpsError("invalid-argument", "Image trop volumineuse (max ~1 Mo après compression).");
+    }
+    const language = String(request.data.language || "fre").slice(0, 20);
+    const isTable = request.data.isTable !== false;
+    const engine = [1, 2].includes(Number(request.data.engine)) ? Number(request.data.engine) : 2;
+
+    const body = new URLSearchParams({
+      base64Image: dataUrl,
+      language,
+      isTable: isTable ? "true" : "false",
+      scale: "true",
+      OCREngine: String(engine),
+      isCreateSearchablePDF: "false",
+    });
+    const res = await fetch("https://api.ocr.space/parse/image", {
+      method: "POST",
+      headers: {
+        "apikey": OCR_SPACE_API_KEY.value(),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
+    if (!res.ok) throw new HttpsError("internal", `Service OCR indisponible (${res.status}).`);
+    const d = await res.json();
+    if (d.IsErroredOnProcessing) {
+      throw new HttpsError("internal", d.ErrorMessage?.[0] || "Erreur OCR.");
+    }
+    return { text: (d.ParsedResults?.[0]?.ParsedText || "").trim() };
+  }
+);
+
+// ── togglePaymentStatus ───────────────────────────────────────────────────────
+// Bascule paymentStatus (active ↔ cancelled) d'un abonné AUTONOMIE_PREMIUM.
+// Autorisé uniquement pour CREATOR_EMAIL ou le coach propriétaire de l'athlète.
+// Utilise l'Admin SDK pour contourner la règle RTDB (qui bloque cancelled→active
+// côté client) tout en maintenant l'isolation par vérification serveur stricte.
+exports.togglePaymentStatus = onCall(async (request) => {
+  if (!request.auth || !request.auth.token || !request.auth.token.email) {
+    throw new HttpsError("unauthenticated", "Connecte-toi pour effectuer cette action.");
+  }
+  const callerEmail = request.auth.token.email.toLowerCase();
+  const isCreator = callerEmail === CREATOR_EMAIL;
+
+  const athleteEmail = String(request.data && request.data.athleteEmail || "").toLowerCase().trim();
+  if (!athleteEmail) throw new HttpsError("invalid-argument", "athleteEmail requis.");
+
+  // Lecture autoritaire de l'athlète depuis RTDB (jamais depuis le cache client).
+  const athKey = emailKey(athleteEmail);
+  const athSnap = await db.ref("users/" + athKey).get();
+  const athlete = athSnap.val();
+  if (!athlete || athlete.status !== "AUTONOMIE_PREMIUM") {
+    throw new HttpsError("not-found", "Abonné introuvable.");
+  }
+
+  if (!isCreator) {
+    // Vérification d'appartenance : le coach appelant doit être celui référencé
+    // dans le profil de l'athlète — lu depuis RTDB, pas depuis le cache client.
+    const callerSnap = await db.ref("users/" + emailKey(callerEmail)).get();
+    const caller = callerSnap.val();
+    if (!caller || caller.role !== "coach") {
+      throw new HttpsError("permission-denied", "Cette action est réservée aux coachs.");
+    }
+    if (!athlete.coachId || caller.id !== athlete.coachId) {
+      throw new HttpsError("permission-denied", "Cet athlète n'est pas dans ta liste.");
+    }
+  }
+
+  const newStatus = athlete.paymentStatus === "active" ? "cancelled" : "active";
+  await db.ref().update({
+    [`users/${athKey}/paymentStatus`]: newStatus,
+    [`users/${athKey}/updatedAt`]: Date.now(),
+  });
+  return { paymentStatus: newStatus };
 });

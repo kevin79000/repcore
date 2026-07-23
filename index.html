@@ -333,6 +333,15 @@ h3{font-size:16px;text-transform:uppercase}
 .emo-opt.sel .emo{stroke:var(--eo);opacity:1;transform:scale(1.15);filter:drop-shadow(0 0 5px var(--eo))}
 .emo-opt.sel .emo .emo-dot{fill:var(--eo)}
 .emo-opt.sel .emo-lbl{color:var(--eo);text-shadow:0 0 8px var(--eo-glow)}
+/* Curseur néon 1-10 (motivation) */
+.bsl-wrap{background:var(--surface-1);border:1px solid #222;border-radius:12px;padding:18px 16px 14px;text-align:center}
+.bsl-value{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;transition:.15s}
+.bsl-value .bsl-max{font-size:20px;color:#444;margin-left:2px}
+.bsl-feedback{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:4px 0 14px;min-height:13px;transition:.15s}
+.bslider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:#1a1a1a;outline:none;margin:0;padding:0;border:none;box-shadow:none}
+.bslider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:#0a0a0a;border:2.5px solid var(--bsl,#555);box-shadow:0 0 12px var(--bsl-glow,transparent);cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.bslider::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:#0a0a0a;border:2.5px solid var(--bsl,#555);box-shadow:0 0 12px var(--bsl-glow,transparent);cursor:pointer}
+.bsl-scale{display:flex;justify-content:space-between;font-size:9px;font-weight:700;color:#3a3a3a;margin-top:8px;padding:0 4px}
 .choice-opt.sel{border-color:var(--red);border-left-width:3px;color:#fff;background:var(--red-bg)}
 .choice-opt:active{transform:scale(.99)}
 </style>
@@ -6114,6 +6123,34 @@ function bEmojiScale(gid,opts){
     `<svg class="emo" viewBox="0 0 48 48" fill="none" stroke-width="2.6" stroke-linecap="round"><circle cx="24" cy="24" r="20"/>${BEMO_FACES[o.f]}</svg>`+
     `<span class="emo-lbl">${o.v}</span></div>`).join('')+`</div>`;
 }
+// Curseur néon 1-10 — stocke "X/10" (affiché tel quel côté coach)
+const BSL_COLORS=['#E02020','#ef4116','#f97316','#fb9d1e','#eab308','#c9d411','#a3e635','#67dd2f','#3ad348','#22c55e'];
+const BSL_LABELS=['À plat','Très faible','En baisse','Fragile','Moyenne','Correcte','Bonne','Très bonne','Excellente','EN FEU !'];
+function bSlider(gid){
+  const parsed=parseInt(String(bilData[gid]||'').match(/\d+/)?.[0]||0);
+  const set=parsed>=1&&parsed<=10;
+  const v=set?parsed:5;
+  const c=set?BSL_COLORS[v-1]:'#555';
+  const pct=(v-1)/9*100;
+  const track=set?`linear-gradient(90deg,${c} ${pct}%,#1a1a1a ${pct}%)`:'#1a1a1a';
+  return `<div class="bsl-wrap">
+    <div class="bsl-value" id="bsl-num-${gid}" style="color:${c};${set?`text-shadow:0 0 16px ${c}66`:''}">${set?v:'–'}<span class="bsl-max">/10</span></div>
+    <div class="bsl-feedback" id="bsl-fb-${gid}" style="color:${set?c:'#555'}">${set?BSL_LABELS[v-1]:'Fais glisser le curseur'}</div>
+    <input type="range" min="1" max="10" step="1" value="${v}" class="bslider" id="bsl-in-${gid}" style="--bsl:${set?c:'#555'};--bsl-glow:${set?c+'66':'transparent'};background:${track}" oninput="bSliderInput('${gid}',this.value)">
+    <div class="bsl-scale"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span></div>
+  </div>`;
+}
+function bSliderInput(gid,val){
+  const v=parseInt(val);
+  bilData[gid]=v+'/10';
+  const c=BSL_COLORS[v-1];
+  const num=document.getElementById('bsl-num-'+gid);
+  if(num){num.innerHTML=v+'<span class="bsl-max">/10</span>';num.style.color=c;num.style.textShadow='0 0 16px '+c+'66';}
+  const fb=document.getElementById('bsl-fb-'+gid);
+  if(fb){fb.textContent=BSL_LABELS[v-1];fb.style.color=c;}
+  const inp=document.getElementById('bsl-in-'+gid);
+  if(inp){if(inp.value!==String(v))inp.value=v;const pct=(v-1)/9*100;inp.style.setProperty('--bsl',c);inp.style.setProperty('--bsl-glow',c+'66');inp.style.background=`linear-gradient(90deg,${c} ${pct}%,#1a1a1a ${pct}%)`;}
+}
 function bSec(title,html){return`<div style="margin-bottom:22px"><div style="font-size:9px;color:var(--sub);text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #181818">${title}</div>${html}</div>`;}
 function bMeas(id,label,unit){return`<div class="bil-row"><span class="bil-row-label">${label}</span><div style="display:flex;align-items:center;gap:6px">${bQ(id)}<span class="bil-unit">${unit}</span></div></div>`;}
 
@@ -6264,7 +6301,7 @@ const BIL_STEPS=[
   // Step 3 : Ressenti & Modifications
   ()=>bSec('Ressenti & Modifications',
     bLbl('Quel est ton niveau de motivation en ce moment (sur une échelle de 1 à 10) :')+
-    `<div>${bC('bil-motivation',['Moins de 2/10','Entre 3 et 4/10','Entre 5 et 6/10','Entre 7 et 8/10','9 ou 10/10'])}</div>`+
+    `<div>${bSlider('bil-motivation')}</div>`+
     bLbl('Souhaiterais tu des modifications dans ton programme ?')+bTA('bil-prog-modifs','Décris librement tes souhaits de modifications...')
   ),
   // Step 4 : Sommeil & Stress
